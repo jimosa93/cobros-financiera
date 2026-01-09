@@ -51,7 +51,7 @@ export default function EditUserPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario actualizado', type: 'success' })); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
       router.push("/users");
     } catch(err:any) {
       setError(err.message || "Error");

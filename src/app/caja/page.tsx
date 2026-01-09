@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -8,6 +8,7 @@ import SearchBar from '@/components/SearchBar';
 import { cardStyle } from '@/styles/ui';
 import { Pagination, IconButton } from '@/components/TableControls';
 import { useToast } from '@/components/Toast';
+import Spinner from '@/components/Spinner';
 
 interface CajaItem {
   id: number;
@@ -80,7 +81,7 @@ export default function CajaPage() {
               <tbody>
                 {loading ? (
                   <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+                    <Spinner size={40} />
                   </td></tr>
                 ) : items.length === 0 ? (
                   <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>No hay movimientos</td></tr>

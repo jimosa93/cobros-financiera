@@ -38,6 +38,33 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
   }, [addToast]);
 
+  // Listen for custom global-toast events or storage changes
+  useEffect(() => {
+    const handleQueuedToast = () => {
+      try {
+        const queued = sessionStorage.getItem('globalToast');
+        if (queued) {
+          const parsed = JSON.parse(queued);
+          if (parsed?.message) addToast(parsed);
+          sessionStorage.removeItem('globalToast');
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'globalToast') handleQueuedToast();
+    };
+    const onGlobal = () => handleQueuedToast();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('global-toast', onGlobal);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('global-toast', onGlobal);
+    };
+  }, [addToast]);
+
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}

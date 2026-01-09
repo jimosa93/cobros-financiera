@@ -66,7 +66,7 @@ export default function EditAbonoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono actualizado', type: 'success' })); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
       router.push("/abonos");
     } catch (err: any) {
       alert(err.message || "Error");

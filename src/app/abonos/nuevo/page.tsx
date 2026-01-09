@@ -84,7 +84,7 @@ export default function NuevoAbonoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono registrado', type: 'success' })); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono registrado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
       router.push('/abonos');
       // update last abono to the one just created (data.abono)
       if (data.abono) {

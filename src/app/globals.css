@@ -66,7 +66,7 @@ a {
   background: #ffffff; /* keep mobile menu light to match desktop */
   color: #222;
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   padding: 0.5rem 1rem 1rem 1rem;
   border-top: 1px solid #eee;
   z-index: 40;
@@ -112,16 +112,17 @@ a {
     background: #f5fbff;
     color: #0070f3;
   }
-  .mobile-menu .nav-link[aria-current='page'],
+  .mobile-menu .nav-link[aria-current="page"],
   .mobile-menu .nav-link.active {
     background: #f0f7ff;
     color: #0070f3;
     font-weight: 600;
   }
 
-/* SearchBar responsive: stack input and add button on mobile */
-.search-block {
-  /* inline styles applied from JS; keep class for responsive layout */
+  /* SearchBar responsive: stack input and add button on mobile */
+  .search-block {
+    /* inline styles applied from JS; keep class for responsive layout */
+  }
 }
 
 @media (max-width: 768px) {
@@ -213,3 +214,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.9;
 }
 
+@keyframes ds-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+}

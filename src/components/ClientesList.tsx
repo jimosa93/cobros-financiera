@@ -8,6 +8,7 @@ import { Navbar } from './Navbar';
 import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
 import { IconButton, Pagination } from '@/components/TableControls';
 import SearchBar from './SearchBar';
+import Spinner from './Spinner';
 
 interface Cliente {
   id: number;
@@ -101,7 +102,7 @@ export default function ClientesList() {
       toast.addToast({ message: 'Cliente eliminado', type: 'success' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al eliminar cliente');
-      try { toast.addToast({ message: 'Error al eliminar cliente', type: 'error' }); } catch (e) {}
+      try { toast.addToast({ message: 'Error al eliminar cliente', type: 'error' }); } catch (e) { }
     } finally {
       setDeleting(false);
     }
@@ -148,8 +149,8 @@ export default function ClientesList() {
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+          <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem' }}>
+            <Spinner size={40} />
           </div>
         ) : clientes.length === 0 ? (
           <div style={{
@@ -211,15 +212,15 @@ export default function ClientesList() {
                         {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES')}
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
-                            {session.user.rol === 'ADMIN' && (
-                              <>
-                                <IconButton type="edit" onClick={() => window.location.href = `/clientes/${cliente.id}/editar`} />
-                                <IconButton type="delete" onClick={() => handleDelete(cliente.id)} />
-                              </>
-                            )}
-                            <IconButton type="card" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?clienteId=${cliente.id}`} />
-                          </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                          {session.user.rol === 'ADMIN' && (
+                            <>
+                              <IconButton type="edit" onClick={() => window.location.href = `/clientes/${cliente.id}/editar`} />
+                              <IconButton type="delete" onClick={() => handleDelete(cliente.id)} />
+                            </>
+                          )}
+                          <IconButton type="card" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?clienteId=${cliente.id}`} />
+                        </div>
                       </td>
                     </tr>
                   ))}

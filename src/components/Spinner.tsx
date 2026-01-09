@@ -10,8 +10,8 @@ export default function Spinner({ size = 40 }: { size?: number }) {
     border: `${borderSize} solid #e5e7eb`,
     borderTopColor: '#0070f3',
     borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-    WebkitAnimation: 'spin 1s linear infinite',
+    animation: 'ds-spin 1s linear infinite',
+    WebkitAnimation: 'ds-spin 1s linear infinite',
     margin: '0 auto',
     display: 'block',
     boxSizing: 'border-box'

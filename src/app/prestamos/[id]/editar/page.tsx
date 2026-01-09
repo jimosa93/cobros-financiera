@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
+import Spinner from '@/components/Spinner';
 
 interface Cliente { id: number; nombreCompleto: string; }
 const INTERESES = [0.1, 0.2, 0.3];
@@ -50,14 +51,16 @@ export default function EditarPrestamoPage() {
 
   const toast = useToast();
   if (status === "loading" || loading) {
-    return <div style={{textAlign:'center',padding:'2rem'}}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>;
+    return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
+      <Spinner size={40} />
+    </div>;
   }
   if (!session || session.user.rol !== "ADMIN") {
     router.replace("/");
     return null;
   }
   if (!prestamo) {
-    return <div style={{textAlign:'center',padding:'2rem'}}>Préstamo no encontrado</div>;
+    return <div style={{ textAlign: 'center', padding: '2rem' }}>Préstamo no encontrado</div>;
   }
 
   // Calcular total a pagar y valor cuota
@@ -102,9 +105,9 @@ export default function EditarPrestamoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error inesperado");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo actualizado', type: 'success' })); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push('/prestamos');
-    } catch(err: any) {
+    } catch (err: any) {
       setError(err.message || "Error inesperado");
     } finally {
       setGuardando(false);
@@ -117,7 +120,7 @@ export default function EditarPrestamoPage() {
       <FormCard title="Editar Préstamo" maxWidth="520px" titleCentered={true}>
         <form onSubmit={handleSubmit}>
           <Field label="Fecha">
-            <ReadonlyInput value={prestamo.fechaInicio?.substr(0,10)} />
+            <ReadonlyInput value={prestamo.fechaInicio?.substr(0, 10)} />
           </Field>
           <Field label="Cliente *">
             <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required>
@@ -160,46 +163,46 @@ export default function EditarPrestamoPage() {
           <Field label="Nota">
             <Input value={nota} onChange={e => setNota(e.target.value)} type="text" maxLength={100} />
           </Field>
-            <div style={{ marginTop: '2rem' }}>
-              <button
-                type="submit"
-                disabled={guardando}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  backgroundColor: guardando ? '#999' : '#0070f3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '1rem',
-                  cursor: guardando ? 'not-allowed' : 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                {guardando ? 'Guardando…' : 'Guardar Cambios'}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/prestamos')}
-                disabled={guardando}
-                style={{
-                  width: '100%',
-                  marginTop: '0.75rem',
-                  padding: '0.75rem',
-                  backgroundColor: 'white',
-                  color: '#0070f3',
-                  border: '1px solid #0070f3',
-                  borderRadius: '4px',
-                  fontSize: '1rem',
-                  cursor: guardando ? 'not-allowed' : 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-            {error && <div style={{color:'#c33',marginTop:12,background:'#fee',padding:6,borderRadius:5,fontWeight:500}}>{error}</div>}
-            {successMsg && <div style={{color:'#fff',marginTop:12,background:'#18b340',padding:7,borderRadius:5,fontWeight:700,fontSize:18, textAlign:'center'}}>{successMsg}</div>}
+          <div style={{ marginTop: '2rem' }}>
+            <button
+              type="submit"
+              disabled={guardando}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                backgroundColor: guardando ? '#999' : '#0070f3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '1rem',
+                cursor: guardando ? 'not-allowed' : 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              {guardando ? 'Guardando…' : 'Guardar Cambios'}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/prestamos')}
+              disabled={guardando}
+              style={{
+                width: '100%',
+                marginTop: '0.75rem',
+                padding: '0.75rem',
+                backgroundColor: 'white',
+                color: '#0070f3',
+                border: '1px solid #0070f3',
+                borderRadius: '4px',
+                fontSize: '1rem',
+                cursor: guardando ? 'not-allowed' : 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+          {error && <div style={{ color: '#c33', marginTop: 12, background: '#fee', padding: 6, borderRadius: 5, fontWeight: 500 }}>{error}</div>}
+          {successMsg && <div style={{ color: '#fff', marginTop: 12, background: '#18b340', padding: 7, borderRadius: 5, fontWeight: 700, fontSize: 18, textAlign: 'center' }}>{successMsg}</div>}
         </form>
       </FormCard>
     </div>

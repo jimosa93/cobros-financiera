@@ -52,8 +52,8 @@ export default function UsersPage() {
     setUsers(prev => prev.filter(u => u.id !== id));
     toast.addToast({ message: 'Usuario eliminado', type: 'success' });
   }
-  const headerStyle: React.CSSProperties = { textAlign:'left', fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
-  const cellStyle: React.CSSProperties = { color:'#232323', fontSize:15, background:'#fff', padding:'12px 8px', borderBottom:'1px solid #ecedef', fontWeight:400 };
+  const headerStyle: React.CSSProperties = { textAlign: 'left', fontWeight: 600, color: '#232323', fontSize: 16, background: '#f9fafe', padding: '13px 8px' };
+  const cellStyle: React.CSSProperties = { color: '#232323', fontSize: 15, background: '#fff', padding: '12px 8px', borderBottom: '1px solid #ecedef', fontWeight: 400 };
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
@@ -68,7 +68,9 @@ export default function UsersPage() {
           addLabel="+ Nuevo Usuario"
           showAdd={true}
         />
+
         <div style={{ background: "white", borderRadius: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
+
           {loading ? <div style={{ padding: 20, textAlign: 'center' }}><Spinner size={40} /></div> : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -89,7 +91,7 @@ export default function UsersPage() {
                     <td style={cellStyle}>{u.celular}</td>
                     <td style={cellStyle}>{u.alias || "-"}</td>
                     <td style={cellStyle}>{u.rol}</td>
-                    <td style={{ ...cellStyle, background: 'none', display:'flex', gap:8, justifyContent:'center' }}>
+                    <td style={{ ...cellStyle, background: 'none', display: 'flex', gap: 8, justifyContent: 'center' }}>
                       <IconButton type="edit" onClick={() => router.push(`/users/${u.id}/editar`)} />
                       <IconButton type="delete" onClick={() => eliminar(u.id)} />
                     </td>

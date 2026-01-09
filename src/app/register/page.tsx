@@ -86,7 +86,7 @@ export default function RegisterPage() {
                     fechaTecnico: '',
                     fechaSoat: '',
                 });
-                try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); } catch (e) {}
+                try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
                 router.push('/users');
             }
         } catch (err) {

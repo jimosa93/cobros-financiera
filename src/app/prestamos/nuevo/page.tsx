@@ -98,7 +98,7 @@ export default function NuevoPrestamoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error inesperado");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo creado', type: 'success' })); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
       router.push('/prestamos');
     } catch (err: any) {
       setError(err.message || "Error inesperado");
