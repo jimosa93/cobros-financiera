@@ -199,7 +199,16 @@ export default function TarjetaVirtualPage() {
                     <div className="tv-grid" style={{ gap: 12, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 420px' }}>
                         <div style={{ background: 'white', padding: 12, borderRadius: 8 }}>
                             <h3 style={{ margin: '0 0 15px 0', color: '#222', fontWeight: 700 }}>Información préstamo</h3>
-                            <div className="tv-field-grid" style={{ rowGap: '0.65rem', columnGap: 12, alignItems: 'start' }}>
+                            <div
+                                className="tv-field-grid"
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '170px 1fr',
+                                    rowGap: '0.65rem',
+                                    columnGap: 12,
+                                    alignItems: 'start',
+                                }}
+                            >
                                 <div style={{ color: '#222', fontWeight: 600 }}>Monto Prestado:</div>
                                 <div style={{ color: '#222' }}>{prestamo?.montoPrestado ? Number(prestamo.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</div>
 
@@ -255,7 +264,16 @@ export default function TarjetaVirtualPage() {
                         </div>
                         <div style={{ background: 'white', padding: 12, borderRadius: 8 }}>
                             <h3 style={{ margin: '0 0 15px 0', color: '#222', fontWeight: 700 }}>Información cliente</h3>
-                            <div className="tv-field-grid">
+                            <div
+                                className="tv-field-grid"
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: isMobile ? '1fr' : '170px 1fr',
+                                    rowGap: '0.65rem',
+                                    columnGap: 12,
+                                    alignItems: 'start',
+                                }}
+                            >
                                 <div style={{ color: '#222', fontWeight: 600 }}>Dirección vivienda:</div>
                                 <div style={{ color: '#222' }}>{clienteDetalle?.direccionVivienda || '-'}</div>
 
