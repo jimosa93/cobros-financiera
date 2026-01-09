@@ -8,6 +8,7 @@ import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
 import { useRouter } from "next/navigation";
 import { useToast } from '@/components/Toast';
+import Spinner from '@/components/Spinner';
 
 interface User {
   id: number;
@@ -68,7 +69,7 @@ export default function UsersPage() {
           showAdd={true}
         />
         <div style={{ background: "white", borderRadius: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
-          {loading ? <div style={{ padding: 20 }}>Cargando...</div> : (
+          {loading ? <div style={{ padding: 20, textAlign: 'center' }}><Spinner size={40} /></div> : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
