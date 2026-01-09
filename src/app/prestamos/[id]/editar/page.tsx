@@ -91,7 +91,7 @@ export default function EditarPrestamoPage() {
         body: JSON.stringify({
           clienteId: parseInt(clienteId, 10),
           montoPrestado: montoN,
-          tasa: parseFloat(tasa),
+          tasa: Number(tasa),
           cuotas: cuotasN,
           fechaInicio: prestamo.fechaInicio,
           notas: nota,

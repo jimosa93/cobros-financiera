@@ -42,7 +42,7 @@ export async function PUT(
       data: {
         clienteId,
         montoPrestado,
-        tasa,
+        tasa: Number(tasa),
         cuotas,
         fechaInicio: fechaInicio ? new Date(fechaInicio) : undefined,
         notas: notas || null,

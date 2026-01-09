@@ -33,6 +33,6 @@ export default function ClientesPage() {
   }
 
   return (
-    <ClientesList session={session} />
+    <ClientesList />
   );
 }

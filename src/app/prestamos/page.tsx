@@ -1,6 +1,4 @@
- "use client";
-
-import React from 'react';
+"use client";
 
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
@@ -8,6 +6,7 @@ import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
 import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragEndEvent } from '@dnd-kit/core';
+import React from "react";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import { useSession } from 'next-auth/react';
@@ -39,7 +38,7 @@ function RowSortable({ p, idx, children }: { p: Prestamo, idx: number; children:
   const first = childrenArray[0];
   const rest = childrenArray.slice(1);
   const firstWithHandle = React.isValidElement(first)
-    ? React.cloneElement(first as React.ReactElement, {
+    ? React.cloneElement(first as React.ReactElement<any>, {
         ...attributes,
         ...listeners,
         style: { ...(first as any).props.style, cursor: 'grab' },
@@ -136,8 +135,8 @@ export default function PrestamosPage() {
     else setPrestamos(prev => prev.filter(p => p.id !== id));
   }
 
-  const headerStyle = { textAlign:'left', fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
-  const cellStyle = { color:'#232323', fontSize:15, background:'#fff', padding:'12px 8px', borderBottom:'1px solid #ecedef', fontWeight:400 };
+  const headerStyle: React.CSSProperties = { textAlign:'left', fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
+  const cellStyle: React.CSSProperties = { color:'#232323', fontSize:15, background:'#fff', padding:'12px 8px', borderBottom:'1px solid #ecedef', fontWeight:400 };
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>

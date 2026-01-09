@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
     try {
@@ -77,9 +78,9 @@ export async function GET(request: NextRequest) {
         const where = search
             ? {
                 OR: [
-                    { nombreCompleto: { contains: search, mode: 'insensitive' } },
-                    { email: { contains: search, mode: 'insensitive' } },
-                    { alias: { contains: search, mode: 'insensitive' } },
+                    { nombreCompleto: { contains: search, mode: Prisma.QueryMode.insensitive } },
+                    { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
+                    { alias: { contains: search, mode: Prisma.QueryMode.insensitive } },
                 ],
             }
             : {};

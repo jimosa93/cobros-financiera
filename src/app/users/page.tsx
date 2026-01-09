@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
+import React from "react";
 import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
 import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
@@ -44,8 +45,8 @@ export default function UsersPage() {
     if (!res.ok) return alert(info.error || "No se pudo eliminar");
     setUsers(prev => prev.filter(u => u.id !== id));
   }
-  const headerStyle = { textAlign:'left', fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
-  const cellStyle = { color:'#232323', fontSize:15, background:'#fff', padding:'12px 8px', borderBottom:'1px solid #ecedef', fontWeight:400 };
+  const headerStyle: React.CSSProperties = { textAlign:'left', fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
+  const cellStyle: React.CSSProperties = { color:'#232323', fontSize:15, background:'#fff', padding:'12px 8px', borderBottom:'1px solid #ecedef', fontWeight:400 };
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
