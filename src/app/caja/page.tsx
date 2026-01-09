@@ -7,6 +7,7 @@ import { Navbar } from '@/components/Navbar';
 import SearchBar from '@/components/SearchBar';
 import { cardStyle } from '@/styles/ui';
 import { Pagination, IconButton } from '@/components/TableControls';
+import { useToast } from '@/components/Toast';
 
 interface CajaItem {
   id: number;
@@ -20,6 +21,7 @@ export default function CajaPage() {
   const { data: session } = useSession();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
   const router = useRouter();
+  const toast = useToast();
   const [items, setItems] = useState<CajaItem[]>([]);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -77,7 +79,9 @@ export default function CajaPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>Cargando...</td></tr>
+                  <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+                  </td></tr>
                 ) : items.length === 0 ? (
                   <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>No hay movimientos</td></tr>
                 ) : items.map(it => (
@@ -101,8 +105,9 @@ export default function CajaPage() {
                               if (!res.ok) throw new Error('Error eliminando');
                               // refetch
                               fetchData(page);
+                              toast.addToast({ message: 'Movimiento eliminado', type: 'success' });
                             } catch (e) {
-                              alert('Error eliminando movimiento');
+                              toast.addToast({ message: 'Error eliminando movimiento', type: 'error' });
                             }
                           }} />
                         </div>

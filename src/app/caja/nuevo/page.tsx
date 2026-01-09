@@ -40,6 +40,7 @@ export default function NuevoCajaPage() {
         }),
       });
       if (!res.ok) throw new Error('Error creando movimiento');
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento creado', type: 'success' })); } catch (e) {}
       router.push('/caja');
     } catch (err) {
       console.error(err);

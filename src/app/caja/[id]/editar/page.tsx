@@ -83,6 +83,7 @@ export default function EditCajaPage() {
         }),
       });
       if (!res.ok) throw new Error('Error actualizando');
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento actualizado', type: 'success' })); } catch (e) {}
       router.push('/caja');
     } catch (e) {
       console.error(e);
