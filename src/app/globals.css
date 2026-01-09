@@ -144,6 +144,32 @@ a {
   }
 }
 
+/* Tarjeta Virtual responsive layout */
+.tv-grid {
+  display: grid;
+  /* Left column flexible, right column fixed for desktop */
+  grid-template-columns: 1fr 420px;
+  gap: 12px;
+}
+
+/* field grid: label / value */
+.tv-field-grid {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  row-gap: 0.65rem;
+  column-gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .tv-grid {
+    grid-template-columns: 1fr;
+  }
+  .tv-field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Normalize date input appearance and ensure consistent padding with other inputs */
 input[type="date"],
 input[type="text"],
@@ -170,4 +196,4 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   right: 0.5rem;
   opacity: 0.9;
 }
-}
+
