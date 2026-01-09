@@ -24,23 +24,26 @@ export default function SearchBar({ value, onChange, placeholder = 'Buscar...', 
   };
 
   return (
-    <div style={searchBlock as any}>
+    <div className="search-block" style={searchBlock as any}>
       <input
+        className="search-input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         style={inputStyle as any}
       />
       {showAdd && (
-        addHref ? (
-          <Link href={addHref} style={primaryButton as any}>
-            {addLabel}
-          </Link>
-        ) : (
-          <button type="button" onClick={handleAdd} style={primaryButton as any}>
-            {addLabel}
-          </button>
-        )
+        <div className="search-add">
+          {addHref ? (
+            <Link href={addHref} className="primary-button" style={primaryButton as any}>
+              {addLabel}
+            </Link>
+          ) : (
+            <button type="button" onClick={handleAdd} className="primary-button" style={primaryButton as any}>
+              {addLabel}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

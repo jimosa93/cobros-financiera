@@ -40,3 +40,107 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Navbar responsive styles */
+.site-nav .nav-links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.site-nav .nav-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.mobile-menu {
+  display: none;
+  background: #ffffff; /* keep mobile menu light to match desktop */
+  color: #222;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 0.5rem 1rem 1rem 1rem;
+  border-top: 1px solid #eee;
+  z-index: 40;
+}
+
+.mobile-menu.open {
+  display: block;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .site-nav {
+    padding: 0.75rem 1rem;
+  }
+
+  .site-nav .nav-links {
+    display: none;
+  }
+
+  .mobile-toggle {
+    display: inline-flex;
+  }
+
+  .user-section {
+    display: none;
+  }
+
+  /* Make links in mobile menu full-width tappable */
+  .mobile-menu .nav-link {
+    padding: 0.6rem 0.75rem;
+    display: block;
+    width: 100%;
+    color: #666;
+    border-radius: 6px;
+  }
+  /* mobile menu link hover/active */
+  .mobile-menu .nav-link:hover {
+    background: #f5fbff;
+    color: #0070f3;
+  }
+  .mobile-menu .nav-link[aria-current='page'],
+  .mobile-menu .nav-link.active {
+    background: #f0f7ff;
+    color: #0070f3;
+    font-weight: 600;
+  }
+
+/* SearchBar responsive: stack input and add button on mobile */
+.search-block {
+  /* inline styles applied from JS; keep class for responsive layout */
+}
+
+@media (max-width: 768px) {
+  .search-block {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .search-block .search-input {
+    width: 100%;
+  }
+  .search-block .search-add {
+    width: 100%;
+    display: block;
+  }
+  .search-block .search-add .primary-button {
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+  }
+}
+}

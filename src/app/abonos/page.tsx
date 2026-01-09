@@ -55,7 +55,7 @@ export default function AbonosPage() {
           addLabel="+ Nuevo Abono"
           showAdd={isAdmin}
         />
-        <div style={{ background:'white', borderRadius:12, padding:16, boxShadow:'0 2px 8px rgba(0,0,0,0.05)' }}>
+        <div style={{ background:'white', borderRadius:12, padding:16, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
           {loading ? <div style={{ padding:20 }}>Cargando...</div> : (
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
