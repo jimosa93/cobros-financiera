@@ -143,4 +143,31 @@ a {
     text-align: center;
   }
 }
+
+/* Normalize date input appearance and ensure consistent padding with other inputs */
+input[type="date"],
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  box-sizing: border-box;
+}
+
+input[type="date"] {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f1f1f1;
+  color: #232323;
+  width: 100%;
+  font-size: 1rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Keep the calendar icon visible but aligned */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  right: 0.5rem;
+  opacity: 0.9;
+}
 }
