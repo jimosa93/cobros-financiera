@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import FormCard from '@/components/FormCard';
 import { useSession } from "next-auth/react";
 import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
+import Spinner from "@/components/Spinner";
 
 const TIPOS = ["EFECTIVO", "CON-SUPERVISOR", "CON-JEFE"];
 
@@ -32,7 +33,7 @@ export default function EditAbonoPage() {
           monto: d.abono.monto || "",
           tipoPago: d.abono.tipoPago || TIPOS[0],
           notas: d.abono.notas || "",
-          fecha: d.abono.fecha ? d.abono.fecha.substr(0,10) : "",
+          fecha: d.abono.fecha ? d.abono.fecha.substr(0, 10) : "",
         });
       }
       // load prestamos for selection
@@ -44,7 +45,11 @@ export default function EditAbonoPage() {
     load();
   }, [params.id]);
 
-  if (status === "loading" || loading) return <div style={{padding:20, textAlign:'center'}}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>;
+  if (status === "loading" || loading) {
+    return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
+      <Spinner size={40} />
+    </div>;
+  }
   if (!session || session.user.rol !== "ADMIN") { router.replace("/"); return null; }
 
   const handleChange = (e: any) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -66,7 +71,7 @@ export default function EditAbonoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push("/abonos");
     } catch (err: any) {
       alert(err.message || "Error");
@@ -77,7 +82,6 @@ export default function EditAbonoPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
-      <Navbar />
       <Navbar />
       <FormCard title="Editar Abono" maxWidth="800px" titleCentered={true}>
         <form onSubmit={handleSubmit}>

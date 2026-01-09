@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import ClienteForm from '@/components/ClienteForm';
+import Spinner from '@/components/Spinner';
 
 export default function EditarClientePage() {
   const { data: session, status } = useSession();
@@ -20,16 +21,9 @@ export default function EditarClientePage() {
   }, [status, session, router]);
 
   if (status === 'loading') {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        Cargando...
-      </div>
-    );
+    return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
+      <Spinner size={40} />
+    </div>;
   }
 
   if (!session || session.user.rol !== 'ADMIN') {

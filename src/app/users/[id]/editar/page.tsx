@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useToast } from '@/components/Toast';
 import { Navbar } from "@/components/Navbar";
 import FormCard from '@/components/FormCard';
+import Spinner from "@/components/Spinner";
 
 export default function EditUserPage() {
   const params = useParams();
@@ -27,18 +28,22 @@ export default function EditUserPage() {
           alias: data.user.alias || "",
           rol: data.user.rol || "COBRADOR",
           placaMoto: data.user.placaMoto || "",
-          fechaTecnico: data.user.fechaTecnico ? data.user.fechaTecnico.substr(0,10) : "",
-          fechaSoat: data.user.fechaSoat ? data.user.fechaSoat.substr(0,10) : "",
+          fechaTecnico: data.user.fechaTecnico ? data.user.fechaTecnico.substr(0, 10) : "",
+          fechaSoat: data.user.fechaSoat ? data.user.fechaSoat.substr(0, 10) : "",
         });
       }
-    }).finally(()=>setLoading(false));
+    }).finally(() => setLoading(false));
   }, [params.id]);
 
   const toast = useToast();
-  if (status === "loading" || loading) return <div style={{padding:20, textAlign:'center'}}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>;
+  if (status === "loading" || loading) {
+    return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
+      <Spinner size={40} />
+    </div>;
+  }
   if (!session || session.user.rol !== "ADMIN") { router.replace("/"); return null; }
 
-  const handleChange = (e: any) => setForm({...form, [e.target.name]: e.target.value});
+  const handleChange = (e: any) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -46,14 +51,14 @@ export default function EditUserPage() {
     try {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "PUT",
-        headers: {"Content-Type":"application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push("/users");
-    } catch(err:any) {
+    } catch (err: any) {
       setError(err.message || "Error");
     } finally { setSaving(false); }
   };
@@ -63,40 +68,40 @@ export default function EditUserPage() {
       <Navbar />
       <FormCard title="Editar Usuario" maxWidth="800px" titleCentered={true}>
         <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight:500 }}>Nombre Completo</label>
-              <input name="nombreCompleto" value={form.nombreCompleto||""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color:'#232323', background:'#fff' }}/>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight:500 }}>Email</label>
-              <input name="email" value={form.email||""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color:'#232323', background:'#fff' }}/>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight:500 }}>Celular</label>
-              <input name="celular" value={form.celular||""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color:'#232323', background:'#fff' }}/>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight:500 }}>Rol</label>
-              <select name="rol" value={form.rol||"COBRADOR"} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color:'#232323', background:'#fff' }}>
-                <option value="COBRADOR">Cobrador</option>
-                <option value="ADMIN">Administrador</option>
-              </select>
-            </div>
-            <div style={{ marginTop: '2rem' }}>
-              <button type="submit" disabled={saving} style={{
-                width: '100%',
-                padding: '0.75rem',
-                backgroundColor: saving ? '#999' : '#0070f3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                fontWeight: '500'
-              }}>{saving ? "Guardando..." : "Guardar"}</button>
-              <button type="button" onClick={() => router.push("/users")} disabled={saving} style={{ width:'100%', marginTop: '0.75rem', padding:'0.75rem', background:'white', color:'#0070f3', border:'1px solid #0070f3', borderRadius:4 }}>Cancelar</button>
-            </div>
-            {error && <div style={{color:"#c33",marginTop:12, padding:8, background:'#fee', borderRadius:4}}>{error}</div>}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Nombre Completo</label>
+            <input name="nombreCompleto" value={form.nombreCompleto || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Email</label>
+            <input name="email" value={form.email || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Celular</label>
+            <input name="celular" value={form.celular || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Rol</label>
+            <select name="rol" value={form.rol || "COBRADOR"} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }}>
+              <option value="COBRADOR">Cobrador</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+          </div>
+          <div style={{ marginTop: '2rem' }}>
+            <button type="submit" disabled={saving} style={{
+              width: '100%',
+              padding: '0.75rem',
+              backgroundColor: saving ? '#999' : '#0070f3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '1rem',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              fontWeight: '500'
+            }}>{saving ? "Guardando..." : "Guardar"}</button>
+            <button type="button" onClick={() => router.push("/users")} disabled={saving} style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', background: 'white', color: '#0070f3', border: '1px solid #0070f3', borderRadius: 4 }}>Cancelar</button>
+          </div>
+          {error && <div style={{ color: "#c33", marginTop: 12, padding: 8, background: '#fee', borderRadius: 4 }}>{error}</div>}
         </form>
       </FormCard>
     </div>

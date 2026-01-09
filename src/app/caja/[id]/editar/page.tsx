@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, ReadonlyInput, Select, Input, Textarea } from '@/components/FormControls';
+import Spinner from '@/components/Spinner';
 
 export default function EditCajaPage() {
   const { data: session, status } = useSession();
@@ -22,7 +23,10 @@ export default function EditCajaPage() {
   const [fechaISO, setFechaISO] = useState('');
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === 'loading') {
+      setLoading(true);
+      return;
+    }
     if (!session || session.user.rol !== 'ADMIN') {
       router.replace('/');
       return;
@@ -83,7 +87,7 @@ export default function EditCajaPage() {
         }),
       });
       if (!res.ok) throw new Error('Error actualizando');
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push('/caja');
     } catch (e) {
       console.error(e);
@@ -97,9 +101,7 @@ export default function EditCajaPage() {
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Navbar />
       <FormCard title="Editar movimiento de Caja" maxWidth="600px" titleCentered={true}>
-        {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>
-        ) : (
+        {loading ? <Spinner size={40} /> : (
           <form onSubmit={handleSubmit}>
             <Field label="Fecha">
               <ReadonlyInput value={fechaDisplay} type="text" />
