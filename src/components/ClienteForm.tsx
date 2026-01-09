@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Field, Input } from '@/components/FormControls';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/Toast';
 
 interface ClienteFormData {
     nombreCompleto: string;
@@ -18,6 +19,7 @@ interface ClienteFormProps {
 
 export default function ClienteForm({ clienteId, initialData }: ClienteFormProps) {
     const router = useRouter();
+  const toast = useToast();
     const [formData, setFormData] = useState<ClienteFormData>({
         nombreCompleto: initialData?.nombreCompleto || '',
         celular: initialData?.celular || '',
@@ -91,6 +93,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                 throw new Error(data.error || `Error al ${clienteId ? 'actualizar' : 'crear'} cliente`);
             }
 
+            try { toast.addToast({ message: clienteId ? 'Cliente actualizado' : 'Cliente creado', type: 'success' }); } catch (e) {}
             router.push('/clientes');
             router.refresh();
         } catch (err) {
@@ -102,8 +105,8 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
 
     if (loadingInitial) {
         return (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                Cargando...
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
             </div>
         );
     }

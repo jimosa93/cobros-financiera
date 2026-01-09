@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useToast } from '@/components/Toast';
 import { Navbar } from "@/components/Navbar";
 import FormCard from '@/components/FormCard';
 
@@ -33,7 +34,8 @@ export default function EditUserPage() {
     }).finally(()=>setLoading(false));
   }, [params.id]);
 
-  if (status === "loading" || loading) return <div style={{padding:20}}>Cargando...</div>;
+  const toast = useToast();
+  if (status === "loading" || loading) return <div style={{padding:20, textAlign:'center'}}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>;
   if (!session || session.user.rol !== "ADMIN") { router.replace("/"); return null; }
 
   const handleChange = (e: any) => setForm({...form, [e.target.name]: e.target.value});
@@ -49,6 +51,7 @@ export default function EditUserPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario actualizado', type: 'success' })); } catch (e) {}
       router.push("/users");
     } catch(err:any) {
       setError(err.message || "Error");

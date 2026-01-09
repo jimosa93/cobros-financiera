@@ -8,12 +8,14 @@ import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useToast } from '@/components/Toast';
 
 export default function AbonosPage() {
   const { data: session } = useSession();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
   const canCreateAbono = isAdmin || (!!session && session.user?.rol === 'COBRADOR');
   const router = useRouter();
+  const toast = useToast();
   const [abonos, setAbonos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -36,8 +38,12 @@ export default function AbonosPage() {
     if (!confirm("¿Eliminar abono?")) return;
     const res = await fetch(`/api/abonos/${id}`, { method: "DELETE" });
     const info = await res.json();
-    if (!res.ok) return alert(info.error || "No se pudo eliminar");
+    if (!res.ok) {
+      try { toast.addToast({ message: info.error || "No se pudo eliminar", type: 'error' }); } catch (e) {}
+      return;
+    }
     setAbonos(prev => prev.filter(a => a.id !== id));
+    try { toast.addToast({ message: 'Abono eliminado', type: 'success' }); } catch (e) {}
   }
 
   const headerStyle = { textAlign:'left' as const, fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
@@ -57,7 +63,7 @@ export default function AbonosPage() {
           showAdd={canCreateAbono}
         />
         <div style={{ background:'white', borderRadius:12, padding:16, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
-          {loading ? <div style={{ padding:20 }}>Cargando...</div> : (
+          {loading ? <div style={{ padding:20, textAlign:'center' }}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div> : (
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
                 <tr>

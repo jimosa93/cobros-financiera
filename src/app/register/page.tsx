@@ -86,9 +86,8 @@ export default function RegisterPage() {
                     fechaTecnico: '',
                     fechaSoat: '',
                 });
-                setTimeout(() => {
-                    router.push('/users');
-                }, 2000);
+                try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); } catch (e) {}
+                router.push('/users');
             }
         } catch (err) {
             setError('Ocurrió un error al crear el usuario');

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useToast } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
@@ -47,8 +48,9 @@ export default function EditarPrestamoPage() {
     fetchData();
   }, [params.id]);
 
+  const toast = useToast();
   if (status === "loading" || loading) {
-    return <div style={{textAlign:'center',padding:'2rem'}}>Cargando...</div>;
+    return <div style={{textAlign:'center',padding:'2rem'}}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>;
   }
   if (!session || session.user.rol !== "ADMIN") {
     router.replace("/");
@@ -100,7 +102,8 @@ export default function EditarPrestamoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error inesperado");
-      setSuccessMsg('✔ Préstamo actualizado exitosamente.');
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo actualizado', type: 'success' })); } catch (e) {}
+      router.push('/prestamos');
     } catch(err: any) {
       setError(err.message || "Error inesperado");
     } finally {

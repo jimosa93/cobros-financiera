@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
+import { useToast } from '@/components/Toast';
 import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
 import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
@@ -56,6 +57,7 @@ function RowSortable({ p, idx, children }: { p: Prestamo, idx: number; children:
 export default function PrestamosPage() {
   const { data: session, status } = useSession();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
+  const toast = useToast();
 
   const [prestamos, setPrestamos] = useState<Prestamo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +135,8 @@ export default function PrestamosPage() {
     setMoving(false);
     if (!res.ok) alert(info.error || 'No se pudo eliminar');
     else setPrestamos(prev => prev.filter(p => p.id !== id));
+    if (res.ok) toast.addToast({ message: 'Préstamo eliminado', type: 'success' });
+    else toast.addToast({ message: info.error || 'Error eliminando préstamo', type: 'error' });
   }
 
   const headerStyle: React.CSSProperties = { textAlign:'left', fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
@@ -155,7 +159,7 @@ export default function PrestamosPage() {
         />
         <div style={{overflowX:'auto', background:'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding:'1.6rem 1.1rem'}}>
         {loading ? (
-          <div style={{textAlign:'center'}}>Cargando...</div>
+          <div style={{textAlign:'center'}}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>
         ) : (
           <>
             {isAdmin ? (

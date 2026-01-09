@@ -7,6 +7,7 @@ import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
 import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
 import { useRouter } from "next/navigation";
+import { useToast } from '@/components/Toast';
 
 interface User {
   id: number;
@@ -26,6 +27,7 @@ export default function UsersPage() {
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const router = useRouter();
+  const toast = useToast();
 
   useEffect(() => {
     setLoading(true);
@@ -42,8 +44,12 @@ export default function UsersPage() {
     if (!confirm("¿Eliminar usuario?")) return;
     const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
     const info = await res.json();
-    if (!res.ok) return alert(info.error || "No se pudo eliminar");
+    if (!res.ok) {
+      toast.addToast({ message: info.error || "No se pudo eliminar", type: 'error' });
+      return;
+    }
     setUsers(prev => prev.filter(u => u.id !== id));
+    toast.addToast({ message: 'Usuario eliminado', type: 'success' });
   }
   const headerStyle: React.CSSProperties = { textAlign:'left', fontWeight:600, color:'#232323', fontSize:16, background:'#f9fafe', padding:'13px 8px' };
   const cellStyle: React.CSSProperties = { color:'#232323', fontSize:15, background:'#fff', padding:'12px 8px', borderBottom:'1px solid #ecedef', fontWeight:400 };

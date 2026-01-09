@@ -289,7 +289,7 @@ export default function TarjetaVirtualPage() {
 
                 <div style={{ ...(cardStyle as React.CSSProperties) }}>
                     <h2 style={{ marginTop: 0, marginBottom: 12, color: '#222' }}>Abonos</h2>
-                    {loading ? <div>Cargando...</div> : (
+                    {loading ? <div style={{ textAlign: 'center', padding: 12 }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div> : (
                         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                             <table style={{ minWidth: 640, width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>

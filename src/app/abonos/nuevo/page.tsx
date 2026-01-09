@@ -70,7 +70,7 @@ export default function NuevoAbonoPage() {
     });
   }, []);
 
-  if (status === "loading") return <div style={{padding:20}}>Cargando...</div>;
+  if (status === "loading") return <div style={{padding:20, textAlign:'center'}}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>;
   if (!session) { router.replace("/login"); return null; }
 
   const handleSubmit = async (e:any) => {
@@ -84,8 +84,8 @@ export default function NuevoAbonoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error");
-      setSuccess("Abono registrado correctamente.");
-      setMonto(""); setNota(""); setPrestamoId(""); setClienteId("");
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono registrado', type: 'success' })); } catch (e) {}
+      router.push('/abonos');
       // update last abono to the one just created (data.abono)
       if (data.abono) {
         setLastAbono(data.abono);

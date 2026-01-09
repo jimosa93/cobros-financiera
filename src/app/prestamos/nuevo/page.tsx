@@ -46,7 +46,7 @@ export default function NuevoPrestamoPage() {
   }, []);
 
   if (status === "loading") {
-    return <div style={{textAlign:'center',padding:'2rem'}}>Cargando...</div>;
+    return <div style={{textAlign:'center',padding:'2rem'}}><div style={{ width:40, height:40, borderRadius:'50%', border:'6px solid #e5e7eb', borderTop:'6px solid #0070f3', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>;
   }
   if (!session || session.user.rol !== "ADMIN") {
     router.replace("/");
@@ -98,12 +98,8 @@ export default function NuevoPrestamoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error inesperado");
-      setSuccessMsg("✔ Préstamo guardado exitosamente. ID: " + data.prestamo.id);
-      setMonto("");
-      setCuotas("");
-      setTasa(INTERESES[0]);
-      setNota("");
-      setClienteId("");
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo creado', type: 'success' })); } catch (e) {}
+      router.push('/prestamos');
     } catch (err: any) {
       setError(err.message || "Error inesperado");
     } finally {

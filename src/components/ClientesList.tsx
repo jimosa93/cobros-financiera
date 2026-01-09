@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useToast } from '@/components/Toast';
 import Link from 'next/link';
 import { Navbar } from './Navbar';
 import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
@@ -27,6 +28,7 @@ interface Pagination {
 
 export default function ClientesList() {
   const { data: session } = useSession();
+  const toast = useToast();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -96,8 +98,10 @@ export default function ClientesList() {
       setShowDeleteModal(false);
       setClienteToDelete(null);
       fetchClientes(pagination.page, search);
+      toast.addToast({ message: 'Cliente eliminado', type: 'success' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al eliminar cliente');
+      try { toast.addToast({ message: 'Error al eliminar cliente', type: 'error' }); } catch (e) {}
     } finally {
       setDeleting(false);
     }
@@ -144,8 +148,8 @@ export default function ClientesList() {
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-            Cargando clientes...
+          <div style={{ textAlign: 'center', padding: '3rem' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
           </div>
         ) : clientes.length === 0 ? (
           <div style={{
