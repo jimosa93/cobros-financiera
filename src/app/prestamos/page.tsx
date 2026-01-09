@@ -206,6 +206,9 @@ export default function PrestamosPage() {
                               <button aria-label="Eliminar" title="Eliminar" onClick={()=>eliminarPrestamo(p.id)} style={{ padding:8, border:'1px solid #e57373', background:'#e57373', borderRadius:6, cursor:'pointer' }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M14 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                               </button>
+                              <button aria-label="Tarjeta" title="Tarjeta" onClick={()=>window.location.href=`/tarjeta-virtual?prestamoId=${p.id}`} style={{ padding:8, border:'1px solid #ccc', background:'white', borderRadius:6, cursor:'pointer' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                              </button>
                             </td>
                           </RowSortable>
                         );
@@ -224,18 +227,17 @@ export default function PrestamosPage() {
                     <th style={headerStyle}>Cuotas</th>
                     <th style={headerStyle}>Interés</th>
                     <th style={headerStyle}>Valor Cuota</th>
-                        <th style={headerStyle}>Total</th>
-                        <th style={headerStyle}>Abono T</th>
-                        <th style={headerStyle}>Saldo</th>
-                        <th style={headerStyle}>Fecha I</th>
-                        <th style={headerStyle}>Actual</th>
-                        <th style={headerStyle}>Orden</th>
-                        <th style={headerStyle}>Acciones</th>
+                    <th style={headerStyle}>Total</th>
+                    <th style={headerStyle}>Abono T</th>
+                    <th style={headerStyle}>Saldo</th>
+                    <th style={headerStyle}>Fecha I</th>
+                    <th style={headerStyle}>Actual</th>
+                    <th style={headerStyle}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {prestamos.length === 0 && (
-                    <tr><td colSpan={9} style={{textAlign:'center',padding:'2rem 0',color:'#888'}}>No hay préstamos</td></tr>
+                    <tr><td colSpan={11} style={{textAlign:'center',padding:'2rem 0',color:'#888'}}>No hay préstamos</td></tr>
                   )}
                   {prestamos.map((p, idx) => {
                     const { valorCuota, totalPagar } = calculate(p.montoPrestado, p.tasa, p.cuotas);
@@ -248,8 +250,15 @@ export default function PrestamosPage() {
                         <td style={cellStyle}>{Math.round(p.tasa*100)}%</td>
                         <td style={cellStyle}>{valorCuota>0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
                         <td style={cellStyle}>{totalPagar>0 ? totalPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
-                        <td style={cellStyle}>{p.orden}</td>
-                        <td style={{...cellStyle, background:'none'}}>-</td>
+                        <td style={cellStyle}>{(abonoSums[p.id] || 0) > 0 ? (abonoSums[p.id] || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
+                        <td style={cellStyle}>{ (totalPagar - (abonoSums[p.id] || 0)) >= 0 ? (totalPagar - (abonoSums[p.id] || 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-' }</td>
+                        <td style={cellStyle}>{(p as any).fechaInicio ? (p as any).fechaInicio.substr(0,10) : '-'}</td>
+                        <td style={cellStyle}>{valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0}</td>
+                        <td style={{...cellStyle, background:'none', display:'flex', justifyContent:'center', alignItems:'center'}}>
+                          <button aria-label="Tarjeta" title="Tarjeta" onClick={()=>window.location.href=`/tarjeta-virtual?prestamoId=${p.id}`} style={{ padding:8, border:'1px solid #ccc', background:'white', borderRadius:6, cursor:'pointer' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}

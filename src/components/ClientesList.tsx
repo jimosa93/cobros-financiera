@@ -174,9 +174,7 @@ export default function ClientesList() {
                     <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#333' }}>Dirección Negocio</th>
                     <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#333' }}>Préstamos</th>
                     <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#333' }}>Fecha Creación</th>
-                    {session.user.rol === 'ADMIN' && (
-                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#333' }}>Acciones</th>
-                    )}
+                    <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#333' }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,14 +206,17 @@ export default function ClientesList() {
                       <td style={{ padding: '1rem', color: '#666' }}>
                         {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES')}
                       </td>
-                      {session.user.rol === 'ADMIN' && (
-                        <td style={{ padding: '1rem', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                            <IconButton type="edit" onClick={() => window.location.href = `/clientes/${cliente.id}/editar`} />
-                            <IconButton type="delete" onClick={() => handleDelete(cliente.id)} />
+                      <td style={{ padding: '1rem', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                            {session.user.rol === 'ADMIN' && (
+                              <>
+                                <IconButton type="edit" onClick={() => window.location.href = `/clientes/${cliente.id}/editar`} />
+                                <IconButton type="delete" onClick={() => handleDelete(cliente.id)} />
+                              </>
+                            )}
+                            <IconButton type="card" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?clienteId=${cliente.id}`} />
                           </div>
-                        </td>
-                      )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

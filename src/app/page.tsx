@@ -49,14 +49,18 @@ export default function Home() {
           gap: '1.5rem',
           marginBottom: '2rem'
         }}>
+          {/* Nuevo abono first and highlighted */}
           <DashboardCard
-            title="Clientes"
-            description="Gestionar clientes del sistema"
-            href="/clientes"
-            color="#0070f3"
+            title="Nuevo abono"
+            description="Crear un nuevo abono rápidamente"
+            href="/abonos/nuevo"
+            color="#ef4444"
+            cardBackground="#fff1f0"
+            titleColor="#111"
+            descColor="#333"
           />
 
-          {/* Moved Abonos to second position */}
+          {/* Abonos second */}
           <DashboardCard
             title="Abonos"
             description="Registrar y consultar abonos"
@@ -64,12 +68,12 @@ export default function Home() {
             color="#f59e0b"
           />
 
-          {/* New highlighted card for quick create */}
+          {/* Clientes third */}
           <DashboardCard
-            title="Nuevo abono"
-            description="Crear un nuevo abono rápidamente"
-            href="/abonos/nuevo"
-            color="#ef4444"
+            title="Clientes"
+            description="Gestionar clientes del sistema"
+            href="/clientes"
+            color="#0070f3"
           />
 
           <DashboardCard
@@ -89,6 +93,16 @@ export default function Home() {
               />
             </>
           )}
+          {/* Tarjeta virtual - visible to all users */}
+          <DashboardCard
+            title="Tarjeta virtual"
+            description="Ver tarjeta virtual de cliente/prestamo"
+            href="/tarjeta-virtual"
+            color="#06b6d4"
+            cardBackground="#f0f9fb"
+            titleColor="#044e54"
+            descColor="#0b5257"
+          />
         </div>
 
         <div style={{
@@ -126,12 +140,18 @@ function DashboardCard({
   title,
   description,
   href,
-  color
+  color,
+  cardBackground,
+  titleColor,
+  descColor
 }: {
   title: string;
   description: string;
   href: string;
   color: string;
+  cardBackground?: string;
+  titleColor?: string;
+  descColor?: string;
 }) {
   return (
     <Link
@@ -139,7 +159,7 @@ function DashboardCard({
       style={{
         textDecoration: 'none',
         display: 'block',
-        backgroundColor: 'white',
+        backgroundColor: cardBackground || 'white',
         padding: '1.5rem',
         borderRadius: '8px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -171,13 +191,13 @@ function DashboardCard({
       </div>
       <h3 style={{
         marginBottom: '0.5rem',
-        color: '#333',
+        color: titleColor || '#333',
         fontSize: '1.25rem'
       }}>
         {title}
       </h3>
       <p style={{
-        color: '#666',
+        color: descColor || '#666',
         fontSize: '0.9rem',
         margin: 0
       }}>

@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export function IconButton({ type, onClick, title }: { type: "edit" | "delete"; onClick?: () => void; title?: string }) {
+export function IconButton({ type, onClick, title }: { type: "edit" | "delete" | "card"; onClick?: () => void; title?: string }) {
   const common: React.CSSProperties = {
     padding: 8,
     borderRadius: 6,
@@ -15,6 +15,13 @@ export function IconButton({ type, onClick, title }: { type: "edit" | "delete"; 
     return (
       <button aria-label={title || "Editar"} title={title || "Editar"} onClick={onClick} style={{ ...common, border: "1px solid #bbb", background: "white" }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+    );
+  }
+  if (type === "card") {
+    return (
+      <button aria-label={title || "Ver tarjeta"} title={title || "Ver tarjeta"} onClick={onClick} style={{ ...common, border: "1px solid #ccc", background: "white" }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
     );
   }
