@@ -12,6 +12,7 @@ import { useSession } from "next-auth/react";
 export default function AbonosPage() {
   const { data: session } = useSession();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
+  const canCreateAbono = isAdmin || (!!session && session.user?.rol === 'COBRADOR');
   const router = useRouter();
   const [abonos, setAbonos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export default function AbonosPage() {
           placeholder="Buscar por nota o cliente..."
           addHref="/abonos/nuevo"
           addLabel="+ Nuevo Abono"
-          showAdd={isAdmin}
+          showAdd={canCreateAbono}
         />
         <div style={{ background:'white', borderRadius:12, padding:16, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
           {loading ? <div style={{ padding:20 }}>Cargando...</div> : (

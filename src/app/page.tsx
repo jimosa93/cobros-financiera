@@ -55,18 +55,30 @@ export default function Home() {
             href="/clientes"
             color="#0070f3"
           />
-          <DashboardCard
-            title="Préstamos"
-            description="Ver y gestionar préstamos"
-            href="/prestamos"
-            color="#10b981"
-          />
+
+          {/* Moved Abonos to second position */}
           <DashboardCard
             title="Abonos"
             description="Registrar y consultar abonos"
             href="/abonos"
             color="#f59e0b"
           />
+
+          {/* New highlighted card for quick create */}
+          <DashboardCard
+            title="Nuevo abono"
+            description="Crear un nuevo abono rápidamente"
+            href="/abonos/nuevo"
+            color="#ef4444"
+          />
+
+          <DashboardCard
+            title="Préstamos"
+            description="Ver y gestionar préstamos"
+            href="/prestamos"
+            color="#10b981"
+          />
+
           {userRole === 'ADMIN' && (
             <>
               <DashboardCard
