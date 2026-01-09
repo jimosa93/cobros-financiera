@@ -236,27 +236,29 @@ export default function TarjetaVirtualPage() {
         <div style={{ ...(cardStyle as any) }}>
           <h2 style={{ marginTop: 0, marginBottom: 12, color: '#222' }}>Abonos</h2>
           {loading ? <div>Cargando...</div> : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#eef2f7' }}>
-                  <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Fecha</th>
-                  <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Monto</th>
-                  <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Tipo</th>
-                  <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Cobrador</th>
-                </tr>
-              </thead>
-              <tbody>
-                {abonos.map(a => (
-                  <tr key={a.id} style={{ borderBottom: '1px solid #e6eef6', background: '#fff', color: '#222' }}>
-                    <td style={{ padding: 12, color: '#222' }}>{new Date(a.fecha).toLocaleDateString('es-ES')}</td>
-                    <td style={{ padding: 12, color: '#222' }}>{Number(a.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
-                    <td style={{ padding: 12, color: '#222' }}>{a.tipoPago || '-'}</td>
-                    <td style={{ padding: 12, color: '#222' }}>{a.cobrador?.nombreCompleto || '-'}</td>
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ minWidth: 640, width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#eef2f7' }}>
+                    <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Fecha</th>
+                    <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Monto</th>
+                    <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Tipo</th>
+                    <th style={{ padding: 12, textAlign: 'left', color: '#222', fontWeight: 700 }}>Cobrador</th>
                   </tr>
-                ))}
-                {abonos.length === 0 && <tr><td colSpan={4} style={{ padding: 12, textAlign: 'center', color: '#888' }}>No hay abonos</td></tr>}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {abonos.map(a => (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #e6eef6', background: '#fff', color: '#222' }}>
+                      <td style={{ padding: 12, color: '#222' }}>{new Date(a.fecha).toLocaleDateString('es-ES')}</td>
+                      <td style={{ padding: 12, color: '#222' }}>{Number(a.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
+                      <td style={{ padding: 12, color: '#222' }}>{a.tipoPago || '-'}</td>
+                      <td style={{ padding: 12, color: '#222' }}>{a.cobrador?.nombreCompleto || '-'}</td>
+                    </tr>
+                  ))}
+                  {abonos.length === 0 && <tr><td colSpan={4} style={{ padding: 12, textAlign: 'center', color: '#888' }}>No hay abonos</td></tr>}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </main>
