@@ -222,9 +222,7 @@ export default function ClientesList() {
               </table>
             </div>
 
-            {pagination.totalPages > 1 && (
-              <Pagination page={pagination.page} totalPages={pagination.totalPages} onPrev={() => handlePageChange(pagination.page - 1)} onNext={() => handlePageChange(pagination.page + 1)} />
-            )}
+            <Pagination page={pagination.page} totalPages={Math.max(1, pagination.totalPages)} onPrev={() => handlePageChange(pagination.page - 1)} onNext={() => handlePageChange(pagination.page + 1)} />
           </>
         )}
 
