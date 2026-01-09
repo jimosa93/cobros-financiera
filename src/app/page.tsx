@@ -93,6 +93,14 @@ export default function Home() {
               />
             </>
           )}
+          {userRole === 'ADMIN' && (
+            <DashboardCard
+              title="Caja"
+              description="Movimientos de caja"
+              href="/caja"
+              color="#f97316"
+            />
+          )}
           {/* Tarjeta virtual - visible to all users */}
           <DashboardCard
             title="Tarjeta virtual"

@@ -59,6 +59,18 @@ export function Navbar() {
             }}>
                 Abonos
             </Link>
+            {session.user.rol === 'ADMIN' && (
+                <Link href="/caja" className="nav-link" style={{
+                    textDecoration: 'none',
+                    color: isActive('/caja') ? '#0070f3' : '#666',
+                    fontWeight: isActive('/caja') ? '600' : '400',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '4px',
+                    backgroundColor: isActive('/caja') ? '#f0f7ff' : 'transparent'
+                }}>
+                    Caja
+                </Link>
+            )}
 
             {session.user.rol === 'ADMIN' && (
                 <Link href="/users" className="nav-link" style={{

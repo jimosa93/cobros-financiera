@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Cliente {
-  id                Int       @id @default(autoincrement())
+  id                Int        @id @default(autoincrement())
   nombreCompleto    String
   celular           String
   direccionNegocio  String?
@@ -18,19 +18,54 @@ model Cliente {
 }
 
 model Usuario {
-  id             Int      @id @default(autoincrement())
+  id             Int        @id @default(autoincrement())
   nombreCompleto String
   celular        String
-  email          String   @unique
-  password       String?
+  email          String     @unique
   alias          String?
   rol            Rol
   fechaCreacion  DateTime
   placaMoto      String?
   fechaTecnico   DateTime?
   fechaSoat      DateTime?
-  prestamos      Prestamo[] @relation("prestamosCobrador")
+  password       String?
   abonos         Abono[]
+  prestamos      Prestamo[] @relation("prestamosCobrador")
+}
+
+model Prestamo {
+  id            Int      @id @default(autoincrement())
+  clienteId     Int
+  fechaInicio   DateTime
+  montoPrestado Decimal
+  tasa          Float
+  cuotas        Int
+  cobradorId    Int
+  notas         String?
+  orden         Int
+  abonos        Abono[]
+  cliente       Cliente  @relation(fields: [clienteId], references: [id])
+  cobrador      Usuario  @relation("prestamosCobrador", fields: [cobradorId], references: [id])
+}
+
+model Abono {
+  id         Int      @id @default(autoincrement())
+  prestamoId Int
+  cobradorId Int
+  fecha      DateTime
+  monto      Decimal
+  tipoPago   String
+  notas      String?
+  cobrador   Usuario  @relation(fields: [cobradorId], references: [id])
+  prestamo   Prestamo @relation(fields: [prestamoId], references: [id])
+}
+
+model Caja {
+  id    Int            @id @default(autoincrement())
+  fecha DateTime
+  tipo  MovimientoTipo
+  monto Decimal
+  nota  String?
 }
 
 enum Rol {
@@ -38,29 +73,10 @@ enum Rol {
   COBRADOR
 }
 
-model Prestamo {
-  id             Int      @id @default(autoincrement())
-  cliente        Cliente  @relation(fields: [clienteId], references: [id])
-  clienteId      Int
-  fechaInicio    DateTime
-  montoPrestado  Decimal
-  tasa           Float
-  cuotas         Int
-  cobrador       Usuario  @relation("prestamosCobrador", fields: [cobradorId], references: [id])
-  cobradorId     Int
-  notas          String?
-  abonos         Abono[]
-  orden          Int
-}
-
-model Abono {
-  id          Int      @id @default(autoincrement())
-  prestamo    Prestamo @relation(fields: [prestamoId], references: [id])
-  prestamoId  Int
-  cobrador    Usuario  @relation(fields: [cobradorId], references: [id])
-  cobradorId  Int
-  fecha       DateTime
-  monto       Decimal
-  tipoPago    String
-  notas       String?
+enum MovimientoTipo {
+  GASTO
+  ENTRADA
+  SALIDA
+  SALIDA_RUTA
+  ENTRADA_RUTA
 }
