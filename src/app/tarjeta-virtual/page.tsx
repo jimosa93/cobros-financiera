@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { cardStyle, headerTitle } from '@/styles/ui';
 import SearchBar from '@/components/SearchBar';
@@ -31,10 +31,9 @@ interface Abono {
 }
 
 export default function TarjetaVirtualPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const initialCliente = searchParams.get('clienteId') || '';
-  const initialPrestamo = searchParams.get('prestamoId') || '';
+  const initialCliente = '';
+  const initialPrestamo = '';
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteId, setClienteId] = useState<string>(initialCliente);
@@ -152,6 +151,16 @@ export default function TarjetaVirtualPage() {
     if (id) params.set('prestamoId', id);
     router.replace('/tarjeta-virtual?' + params.toString());
   };
+
+  // read initial query params client-side (avoid useSearchParams to prevent prerender error)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get('clienteId') || '';
+    const p = params.get('prestamoId') || '';
+    if (c) setClienteId(c);
+    if (p) setPrestamoId(p);
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
