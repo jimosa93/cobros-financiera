@@ -36,10 +36,10 @@ export default function NuevoClientePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+    <div className="app-bg">
       <Navbar />
-      <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 style={{ marginBottom: '2rem', color: '#333' }}>Nuevo Cliente</h1>
+      <main className="app-main">
+        <h1 className="page-title">Nuevo Cliente</h1>
         <ClienteForm />
       </main>
     </div>

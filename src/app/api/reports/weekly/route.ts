@@ -50,9 +50,14 @@ export async function GET(request: NextRequest) {
     }));
 
     // prestamos created in the week
-    const prestamosCount = await prisma.prestamo.count({
+    // prestamos created in the week (count + sum)
+    const prestamosAgg = await prisma.prestamo.aggregate({
       where: { fechaInicio: { gte: start, lt: end } },
+      _count: { id: true },
+      _sum: { montoPrestado: true },
     });
+    const prestamosCount = prestamosAgg._count.id ?? 0;
+    const prestamosSum = prestamosAgg._sum.montoPrestado ? String(prestamosAgg._sum.montoPrestado) : "0";
 
     // totals per day (aggregate in JS)
     const abonosList = await prisma.abono.findMany({
@@ -69,6 +74,25 @@ export async function GET(request: NextRequest) {
       byDay[key].count += 1;
     });
 
+    // caja movements grouped by tipo
+    const cajaByTipo = await prisma.caja.groupBy({
+      by: ['tipo'],
+      where: { fecha: { gte: start, lt: end } },
+      _sum: { monto: true },
+      _count: { id: true },
+    });
+    const cajaMap = new Map<string, { monto: string; count: number }>();
+    cajaByTipo.forEach(c => {
+      cajaMap.set(String(c.tipo), { monto: c._sum.monto ? String(c._sum.monto) : "0", count: c._count.id ?? 0 });
+    });
+    const cajaTotals = {
+      entradas: cajaMap.get('ENTRADA')?.monto ?? "0",
+      salidas: cajaMap.get('SALIDA')?.monto ?? "0",
+      entradasRuta: cajaMap.get('ENTRADA_RUTA')?.monto ?? "0",
+      salidasRuta: cajaMap.get('SALIDA_RUTA')?.monto ?? "0",
+      gastos: cajaMap.get('GASTO')?.monto ?? "0",
+    };
+
     return NextResponse.json({
       weekStart: start.toISOString().substring(0, 10),
       weekEnd: new Date(end.getTime() - 1).toISOString().substring(0, 10),
@@ -76,6 +100,8 @@ export async function GET(request: NextRequest) {
         abonosSum: String(totalAbonos._sum.monto ?? 0),
         abonosCount: totalAbonos._count.id ?? 0,
         prestamosCount,
+        prestamosSum,
+        cajaTotals,
       },
       byCobrador: byCobradorNamed,
       byDay,

@@ -4,14 +4,37 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
+import Spinner from '@/components/Spinner';
 
 interface CobradorRow { cobradorId: number; nombre: string | null; monto: string; count: number; }
+
+interface CajaTotals {
+  entradas: string;
+  salidas: string;
+  entradasRuta: string;
+  salidasRuta: string;
+  gastos: string;
+}
+
+interface DailyTotals {
+  abonosSum: string;
+  abonosCount: number;
+  prestamosCount: number;
+  prestamosSum: string;
+  cajaTotals: CajaTotals;
+}
+
+interface DailyReport {
+  date: string;
+  totals: DailyTotals;
+  byCobrador: CobradorRow[];
+}
 
 export default function ReportsDailyPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DailyReport | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -33,45 +56,77 @@ export default function ReportsDailyPage() {
     })();
   }, [status]);
 
-  if (loading) return <div style={{ padding: 24 }}>Cargando...</div>;
-  if (!data) return <div style={{ padding: 24 }}>No hay datos</div>;
+  if (loading) return <div className="app-bg">
+    <Navbar />
+    <main className="app-main">
+      <div className="spinner-centered"><Spinner size={40} /></div>
+    </main>
+  </div>;
+  if (!data) return <div className="app-bg"><Navbar /><main className="app-main">No hay datos</main></div>;
+
+  // table styles are handled via CSS classes
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <div className="app-bg">
       <Navbar />
-      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem' }}>
-        <h1 style={{ marginBottom: 8 }}>Resumen Diario — {data.date}</h1>
+      <main className="app-main">
+        <h1 className="page-title">Resumen Diario — {data.date}</h1>
         <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-          <div style={{ padding: 12, border: '1px solid #eee', borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: '#666' }}>Total Abonos</div>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{Number(data.totals.abonosSum).toLocaleString()}</div>
-            <div style={{ fontSize: 12, color: '#666' }}>{data.totals.abonosCount} abonos</div>
+          <div className="card kpi">
+            <div className="muted">Total Abonos</div>
+            <div className="value">${Number(data.totals.abonosSum).toLocaleString()}</div>
+            <div className="muted">{data.totals.abonosCount} abonos</div>
           </div>
-          <div style={{ padding: 12, border: '1px solid #eee', borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: '#666' }}>Préstamos creados</div>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{data.totals.prestamosCount}</div>
+          <div className="card kpi">
+            <div className="muted">Total Préstamos</div>
+            <div className="value">${Number(data.totals.prestamosSum || 0).toLocaleString()}</div>
+            <div className="muted">{data.totals.prestamosCount} préstamos</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <div className="card kpi">
+            <div className="muted">Total entradas</div>
+            <div className="value small">${Number(data.totals.cajaTotals?.entradas || 0).toLocaleString()}</div>
+          </div>
+          <div className="card kpi">
+            <div className="muted">Total salidas</div>
+            <div className="value small">${Number(data.totals.cajaTotals?.salidas || 0).toLocaleString()}</div>
+          </div>
+          <div className="card kpi">
+            <div className="muted">Total entradas ruta</div>
+            <div className="value small">${Number(data.totals.cajaTotals?.entradasRuta || 0).toLocaleString()}</div>
+          </div>
+          <div className="card kpi">
+            <div className="muted">Total salidas ruta</div>
+            <div className="value small">${Number(data.totals.cajaTotals?.salidasRuta || 0).toLocaleString()}</div>
+          </div>
+          <div className="card kpi">
+            <div className="muted">Total gastos</div>
+            <div className="value small">${Number(data.totals.cajaTotals?.gastos || 0).toLocaleString()}</div>
           </div>
         </div>
 
-        <h2 style={{ fontSize: 16 }}>Abonos por cobrador</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: 8 }}>Cobrador</th>
-              <th style={{ textAlign: 'right', padding: 8 }}>Monto</th>
-              <th style={{ textAlign: 'right', padding: 8 }}>Cantidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.byCobrador.map((c: CobradorRow) => (
-              <tr key={c.cobradorId}>
-                <td style={{ padding: 8 }}>{c.nombre || `#${c.cobradorId}`}</td>
-                <td style={{ padding: 8, textAlign: 'right' }}>{Number(c.monto).toLocaleString()}</td>
-                <td style={{ padding: 8, textAlign: 'right' }}>{c.count}</td>
+        <h2 className="section-title">Abonos por cobrador</h2>
+        <div className="table-wrap">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th className="table-header">Cobrador</th>
+                <th className="table-header" style={{ textAlign: 'right' }}>Monto</th>
+                <th className="table-header" style={{ textAlign: 'right' }}>Cantidad</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(data.byCobrador as CobradorRow[]).map((c) => (
+                <tr key={c.cobradorId}>
+                  <td className="table-cell">{c.nombre || `#${c.cobradorId}`}</td>
+                  <td className="table-cell" style={{ textAlign: 'right' }}>${Number(c.monto).toLocaleString()}</td>
+                  <td className="table-cell" style={{ textAlign: 'right' }}>{c.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </main>
     </div>
   );

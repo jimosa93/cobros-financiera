@@ -18,12 +18,13 @@ export default function Home() {
 
   if (status === 'loading') {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ marginBottom: 12 }}>
+      <div className="app-bg">
+        <Navbar />
+        <main className="app-main">
+          <div className="spinner-centered">
             <div style={{ width: 48, height: 48, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -35,20 +36,12 @@ export default function Home() {
   const userRole = session.user.rol;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+    <div className="app-bg">
       <Navbar />
-      <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 style={{ marginBottom: '2rem', color: '#333' }}>
-          Dashboard - Sistema de Cobros
-        </h1>
+      <main className="app-main">
+        <h1 className="page-title">Dashboard - Sistema de Cobros</h1>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '2rem'
-        }}>
-          {/* Nuevo abono first and highlighted */}
+        <div className="dashboard-grid">
           <DashboardCard
             title="Nuevo abono"
             description="Crear un nuevo abono rápidamente"
@@ -59,7 +52,6 @@ export default function Home() {
             descColor="#333"
           />
 
-          {/* Abonos second */}
           <DashboardCard
             title="Abonos"
             description="Registrar y consultar abonos"
@@ -67,7 +59,6 @@ export default function Home() {
             color="#f59e0b"
           />
 
-          {/* Clientes third */}
           <DashboardCard
             title="Clientes"
             description="Gestionar clientes del sistema"
@@ -100,7 +91,6 @@ export default function Home() {
               color="#f97316"
             />
           )}
-          {/* Tarjeta virtual - visible to all users */}
           <DashboardCard
             title="Tarjeta virtual"
             description="Ver tarjeta virtual de cliente/prestamo"
@@ -112,12 +102,7 @@ export default function Home() {
           />
         </div>
 
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
+        <div className="welcome-card">
           <h2 style={{ marginBottom: '1rem', color: '#333' }}>
             Bienvenido, {session.user.name}
           </h2>
@@ -161,53 +146,14 @@ function DashboardCard({
   descColor?: string;
 }) {
   return (
-    <Link
-      href={href}
-      style={{
-        textDecoration: 'none',
-        display: 'block',
-        backgroundColor: cardBackground || 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-      }}
-    >
-      <div style={{
-        width: '48px',
-        height: '48px',
-        borderRadius: '8px',
-        backgroundColor: color,
-        marginBottom: '1rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem',
-        fontWeight: 'bold'
-      }}>
+    <Link href={href} className="dashboard-card" style={{ backgroundColor: cardBackground || 'white' }}>
+      <div className="icon" style={{ backgroundColor: color }}>
         {title[0]}
       </div>
-      <h3 style={{
-        marginBottom: '0.5rem',
-        color: titleColor || '#333',
-        fontSize: '1.25rem'
-      }}>
+      <h3 style={{ marginBottom: '0.5rem', color: titleColor || '#333', fontSize: '1.25rem' }}>
         {title}
       </h3>
-      <p style={{
-        color: descColor || '#666',
-        fontSize: '0.9rem',
-        margin: 0
-      }}>
+      <p style={{ color: descColor || '#666', fontSize: '0.9rem', margin: 0 }}>
         {description}
       </p>
     </Link>

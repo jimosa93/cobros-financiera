@@ -51,10 +51,10 @@ export default function AbonosPage() {
   const cellStyle = { color: '#232323', fontSize: 15, background: '#fff', padding: '12px 8px', borderBottom: '1px solid #ecedef', fontWeight: 400 };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <div className="app-bg">
       <Navbar />
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem' }}>
-        <h1 style={{ fontWeight: 700, fontSize: '2rem', color: '#222' }}>Abonos</h1>
+      <main className="app-main">
+        <h1 className="page-title">Abonos</h1>
         <SearchBar
           value={query}
           onChange={(v) => { setQuery(v); setPage(1); }}
@@ -63,33 +63,33 @@ export default function AbonosPage() {
           addLabel="+ Nuevo Abono"
           showAdd={canCreateAbono}
         />
-        <div style={{ background: 'white', borderRadius: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
-          {loading ? <div style={{ padding: 20, textAlign: 'center' }}><Spinner size={40} /></div> : (
+        <div className="table-wrap" style={{ overflowX: 'auto' }}>
+          {loading ? <div className="spinner-centered"><Spinner size={40} /></div> : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={headerStyle}>Fecha</th>
-                  <th style={headerStyle}>Cliente</th>
-                  <th style={headerStyle}>Código crédito</th>
-                  <th style={headerStyle}>Abono</th>
-                  <th style={headerStyle}>Tipo</th>
-                  <th style={headerStyle}>Cobrador</th>
-                  <th style={headerStyle}>Nota</th>
-                  <th style={headerStyle}>Acciones</th>
+                  <th className="table-header">Fecha</th>
+                  <th className="table-header">Cliente</th>
+                  <th className="table-header">Código crédito</th>
+                  <th className="table-header">Abono</th>
+                  <th className="table-header">Tipo</th>
+                  <th className="table-header">Cobrador</th>
+                  <th className="table-header">Nota</th>
+                  <th className="table-header">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {abonos.length === 0 && <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', color: '#888' }}>No hay abonos</td></tr>}
+                {abonos.length === 0 && <tr><td colSpan={8} className="table-cell" style={{ textAlign: 'center', color: '#888' }}>No hay abonos</td></tr>}
                 {abonos.map(a => (
                   <tr key={a.id}>
-                    <td style={cellStyle}>{new Date(a.fecha).toISOString().substring(0, 10)}</td>
-                    <td style={cellStyle}>{a.prestamo?.cliente?.nombreCompleto || '-'}</td>
-                    <td style={cellStyle}>#{a.prestamoId}</td>
-                    <td style={cellStyle}>{Number(a.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
-                    <td style={cellStyle}>{a.tipoPago}</td>
-                    <td style={cellStyle}>{a.cobrador?.nombreCompleto || '-'}</td>
-                    <td style={cellStyle}>{a.notas || '-'}</td>
-                    <td style={{ ...cellStyle, background: 'none' }}>
+                    <td className="table-cell">{new Date(a.fecha).toISOString().substring(0, 10)}</td>
+                    <td className="table-cell">{a.prestamo?.cliente?.nombreCompleto || '-'}</td>
+                    <td className="table-cell">#{a.prestamoId}</td>
+                    <td className="table-cell">{Number(a.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
+                    <td className="table-cell">{a.tipoPago}</td>
+                    <td className="table-cell">{a.cobrador?.nombreCompleto || '-'}</td>
+                    <td className="table-cell">{a.notas || '-'}</td>
+                    <td className="table-cell" style={{ background: 'none' }}>
                       {isAdmin ? (
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                           <IconButton type="edit" onClick={() => router.push(`/abonos/${a.id}/editar`)} />

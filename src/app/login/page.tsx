@@ -37,24 +37,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h1 style={{ marginBottom: '1.5rem', textAlign: 'center', color: '#333' }}>
-          Sistema de Cobros
-        </h1>
+    <div className="app-bg" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <main className="app-main" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div className="welcome-card" style={{ width: '100%', maxWidth: 400 }}>
+          <h1 style={{ marginBottom: '1.5rem', textAlign: 'center', color: '#333' }}>
+            Sistema de Cobros
+          </h1>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
             <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', color: '#555' }}>
@@ -126,7 +114,8 @@ export default function LoginPage() {
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
         </form>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
