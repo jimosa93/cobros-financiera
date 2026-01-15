@@ -84,6 +84,18 @@ export function Navbar() {
                     Usuarios
                 </Link>
             )}
+            {session.user.rol === 'ADMIN' && (
+                <Link href="/reports" className="nav-link" style={{
+                    textDecoration: 'none',
+                    color: isActive('/reports') ? '#0070f3' : '#666',
+                    fontWeight: isActive('/reports') ? '600' : '400',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '4px',
+                    backgroundColor: isActive('/reports') ? '#f0f7ff' : 'transparent'
+                }}>
+                    Reportes
+                </Link>
+            )}
         </>
     );
 
