@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useToast } from '@/components/Toast';
-import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
+// removed unused style imports
 import SearchBar from '@/components/SearchBar';
-import { IconButton, Pagination } from '@/components/TableControls';
+import { Pagination } from '@/components/TableControls';
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragEndEvent } from '@dnd-kit/core';
 import React from "react";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -21,6 +21,8 @@ interface Prestamo {
   cuotas: number;
   notas?: string;
   orden: number;
+  estado?: string;
+  fechaInicio?: string;
 }
 
 function RowSortable({ p, idx, children }: { p: Prestamo, idx: number; children: React.ReactNode }) {
@@ -40,10 +42,10 @@ function RowSortable({ p, idx, children }: { p: Prestamo, idx: number; children:
   const first = childrenArray[0];
   const rest = childrenArray.slice(1);
   const firstWithHandle = React.isValidElement(first)
-    ? React.cloneElement(first as React.ReactElement<any>, {
+    ? React.cloneElement(first as React.ReactElement<{ style?: React.CSSProperties }>, {
       ...attributes,
       ...listeners,
-      style: { ...(first as any).props.style, cursor: 'grab' },
+      style: { ...((first as React.ReactElement<{ style?: React.CSSProperties }>).props.style || {}), cursor: 'grab' },
     })
     : first;
 
@@ -56,13 +58,13 @@ function RowSortable({ p, idx, children }: { p: Prestamo, idx: number; children:
 }
 
 export default function PrestamosPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
   const toast = useToast();
 
   const [prestamos, setPrestamos] = useState<Prestamo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // removed unused error state
   const [abonoSums, setAbonoSums] = useState<Record<number, number>>({});
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -78,12 +80,14 @@ export default function PrestamosPage() {
       const res = await fetch(`/api/prestamos?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`);
       const data = await res.json();
       const items: Prestamo[] = data.prestamos || [];
-      setPrestamos(items);
+      // mostrar solo préstamos activos en esta vista
+      const activeItems = items.filter((p: Prestamo) => (p.estado ?? 'ACTIVO') === 'ACTIVO');
+      setPrestamos(activeItems);
       setTotal(data.total || 0);
 
       // fetch abono sums for each prestamo
       try {
-        const sums = await Promise.all(items.map(async (p) => {
+        const sums = await Promise.all(activeItems.map(async (p: Prestamo) => {
           try {
             const r = await fetch(`/api/abonos?prestamoId=${p.id}`);
             const d = await r.json();
@@ -163,47 +167,47 @@ export default function PrestamosPage() {
             <div style={{ textAlign: 'center' }}><Spinner size={40} /></div>
           ) : (
             <>
-              {isAdmin ? (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={prestamos.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
-                      <thead>
-                        <tr>
-                          <th style={headerStyle}>#</th>
-                          <th style={headerStyle}>Id</th>
-                          <th style={headerStyle}>Cliente</th>
-                          <th style={headerStyle}>Monto</th>
-                          <th style={headerStyle}>Cuotas</th>
-                          <th style={headerStyle}>Interés</th>
-                          <th style={headerStyle}>Valor Cuota</th>
-                          <th style={headerStyle}>Total</th>
-                          <th style={headerStyle}>Abono T</th>
-                          <th style={headerStyle}>Saldo</th>
-                          <th style={headerStyle}>Fecha I</th>
-                          <th style={headerStyle}>Actual</th>
-                          <th style={headerStyle}>Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {prestamos.length === 0 && (
-                          <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem 0', color: '#888' }}>No hay préstamos</td></tr>
-                        )}
-                        {prestamos.map((p, idx) => {
-                          const { valorCuota, totalPagar } = calculate(p.montoPrestado, p.tasa, p.cuotas);
-                          return (
-                            <RowSortable p={p} idx={idx} key={p.id}>
-                              <td style={{ ...cellStyle, cursor: 'grab', fontWeight: 500 }}>::</td>
-                              <td style={cellStyle}>{p.id}</td>
-                              <td style={cellStyle}>{p.cliente.nombreCompleto}</td>
-                              <td style={cellStyle}>{Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
-                              <td style={cellStyle}>{p.cuotas}</td>
-                              <td style={cellStyle}>{Math.round(p.tasa * 100)}%</td>
-                              <td style={cellStyle}>{valorCuota > 0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
-                              <td style={cellStyle}>{totalPagar > 0 ? totalPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
-                              <td style={cellStyle}>{(abonoSums[p.id] || 0) > 0 ? (abonoSums[p.id] || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
-                              <td style={cellStyle}>{(totalPagar - (abonoSums[p.id] || 0)) >= 0 ? (totalPagar - (abonoSums[p.id] || 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
-                              <td style={cellStyle}>{(p as any).fechaInicio ? (p as any).fechaInicio.substr(0, 10) : '-'}</td>
-                              <td style={cellStyle}>{valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0}</td>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={prestamos.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+                    <thead>
+                      <tr>
+                        <th style={headerStyle}>#</th>
+                        <th style={headerStyle}>Id</th>
+                        <th style={headerStyle}>Cliente</th>
+                        <th style={headerStyle}>Monto</th>
+                        <th style={headerStyle}>Cuotas</th>
+                        <th style={headerStyle}>Interés</th>
+                        <th style={headerStyle}>Valor Cuota</th>
+                        <th style={headerStyle}>Total</th>
+                        <th style={headerStyle}>Abono T</th>
+                        <th style={headerStyle}>Saldo</th>
+                        <th style={headerStyle}>Fecha I</th>
+                        <th style={headerStyle}>Actual</th>
+                        <th style={headerStyle}>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {prestamos.length === 0 && (
+                        <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem 0', color: '#888' }}>No hay préstamos</td></tr>
+                      )}
+                      {prestamos.map((p, idx) => {
+                        const { valorCuota, totalPagar } = calculate(p.montoPrestado, p.tasa, p.cuotas);
+                        return (
+                          <RowSortable p={p} idx={idx} key={p.id}>
+                            <td style={{ ...cellStyle, cursor: 'grab', fontWeight: 500 }}>::</td>
+                            <td style={cellStyle}>{p.id}</td>
+                            <td style={cellStyle}>{p.cliente.nombreCompleto}</td>
+                            <td style={cellStyle}>{Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
+                            <td style={cellStyle}>{p.cuotas}</td>
+                            <td style={cellStyle}>{Math.round(p.tasa * 100)}%</td>
+                            <td style={cellStyle}>{valorCuota > 0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
+                            <td style={cellStyle}>{totalPagar > 0 ? totalPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
+                            <td style={cellStyle}>{(abonoSums[p.id] || 0) > 0 ? (abonoSums[p.id] || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
+                            <td style={cellStyle}>{(totalPagar - (abonoSums[p.id] || 0)) >= 0 ? (totalPagar - (abonoSums[p.id] || 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
+                            <td style={cellStyle}>{p.fechaInicio ? p.fechaInicio.substr(0, 10) : '-'}</td>
+                            <td style={cellStyle}>{valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0}</td>
+                            {isAdmin ? (
                               <td style={{ ...cellStyle, background: 'none', display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
                                 <button aria-label="Editar" title="Editar" onClick={() => window.location.href = `/prestamos/${p.id}/editar`} style={{ padding: 8, border: '1px solid #bbb', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -214,62 +218,16 @@ export default function PrestamosPage() {
                                 <button aria-label="Tarjeta" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?prestamoId=${p.id}`} style={{ padding: 8, border: '1px solid #ccc', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                 </button>
-                              </td>
-                            </RowSortable>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </SortableContext>
-                </DndContext>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
-                  <thead>
-                    <tr>
-                      <th style={headerStyle}>#</th>
-                      <th style={headerStyle}>Cliente</th>
-                      <th style={headerStyle}>Monto</th>
-                      <th style={headerStyle}>Cuotas</th>
-                      <th style={headerStyle}>Interés</th>
-                      <th style={headerStyle}>Valor Cuota</th>
-                      <th style={headerStyle}>Total</th>
-                      <th style={headerStyle}>Abono T</th>
-                      <th style={headerStyle}>Saldo</th>
-                      <th style={headerStyle}>Fecha I</th>
-                      <th style={headerStyle}>Actual</th>
-                      <th style={headerStyle}>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {prestamos.length === 0 && (
-                      <tr><td colSpan={11} style={{ textAlign: 'center', padding: '2rem 0', color: '#888' }}>No hay préstamos</td></tr>
-                    )}
-                    {prestamos.map((p, idx) => {
-                      const { valorCuota, totalPagar } = calculate(p.montoPrestado, p.tasa, p.cuotas);
-                      return (
-                        <tr key={p.id} style={{ background: idx % 2 ? '#fff' : '#fafafd', height: 45 }}>
-                          <td style={{ ...cellStyle, fontWeight: 500 }}>::</td>
-                          <td style={cellStyle}>{p.cliente.nombreCompleto}</td>
-                          <td style={cellStyle}>{Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
-                          <td style={cellStyle}>{p.cuotas}</td>
-                          <td style={cellStyle}>{Math.round(p.tasa * 100)}%</td>
-                          <td style={cellStyle}>{valorCuota > 0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
-                          <td style={cellStyle}>{totalPagar > 0 ? totalPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
-                          <td style={cellStyle}>{(abonoSums[p.id] || 0) > 0 ? (abonoSums[p.id] || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
-                          <td style={cellStyle}>{(totalPagar - (abonoSums[p.id] || 0)) >= 0 ? (totalPagar - (abonoSums[p.id] || 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
-                          <td style={cellStyle}>{(p as any).fechaInicio ? (p as any).fechaInicio.substr(0, 10) : '-'}</td>
-                          <td style={cellStyle}>{valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0}</td>
-                          <td style={{ ...cellStyle, background: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <button aria-label="Tarjeta" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?prestamoId=${p.id}`} style={{ padding: 8, border: '1px solid #ccc', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
+                              </td>) : (
+                              <td style={cellStyle}> - </td>
+                            )}
+                          </RowSortable>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </SortableContext>
+              </DndContext>
             </>
           )}
         </div>

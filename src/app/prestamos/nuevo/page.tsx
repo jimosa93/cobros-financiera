@@ -26,7 +26,9 @@ export default function NuevoPrestamoPage() {
   const [monto, setMonto] = useState("");
   const [cuotas, setCuotas] = useState("");
   const [tasa, setTasa] = useState(INTERESES[0]);
-  const [fecha] = useState(() => new Date().toISOString().substring(0, 10));
+  const now = new Date();
+  const [fechaDisplay] = useState(() => now.toLocaleDateString('es-ES'));
+  const [fechaISOFull] = useState(() => now.toISOString());
   const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -91,7 +93,7 @@ export default function NuevoPrestamoPage() {
           montoPrestado: montoN,
           tasa,
           cuotas: cuotasN,
-          fechaInicio: fecha,
+          fechaInicio: fechaISOFull,
           notas: nota,
           cobradorId: session.user.id,
         }),
@@ -114,7 +116,7 @@ export default function NuevoPrestamoPage() {
           <form onSubmit={handleSubmit}>
             {/* form fields standardized via FormControls */}
             <Field label="Fecha">
-              <ReadonlyInput value={fecha} type="date" />
+              <ReadonlyInput value={fechaDisplay} type="text" />
             </Field>
             <Field label="Cliente *">
               <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required>

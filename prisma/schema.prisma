@@ -38,6 +38,8 @@ model Prestamo {
   clienteId     Int
   fechaInicio   DateTime
   montoPrestado Decimal
+  /// Estado del préstamo: ACTIVO / INACTIVO / CANCELADO
+  estado        EstadoPrestamo @default(ACTIVO)
   tasa          Float
   cuotas        Int
   cobradorId    Int
@@ -46,6 +48,7 @@ model Prestamo {
   abonos        Abono[]
   cliente       Cliente  @relation(fields: [clienteId], references: [id])
   cobrador      Usuario  @relation("prestamosCobrador", fields: [cobradorId], references: [id])
+  @@index([estado])
 }
 
 model Abono {
@@ -79,4 +82,10 @@ enum MovimientoTipo {
   SALIDA
   SALIDA_RUTA
   ENTRADA_RUTA
+}
+
+enum EstadoPrestamo {
+  ACTIVO
+  INACTIVO
+  CANCELADO
 }

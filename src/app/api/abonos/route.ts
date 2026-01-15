@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth';
 
 // GET: list abonos with pagination/search
@@ -58,17 +59,46 @@ export async function POST(request: NextRequest) {
     if (!prestamoId || !monto || !tipoPago) {
       return NextResponse.json({ error: 'Campos faltantes' }, { status: 400 });
     }
-    const abono = await prisma.abono.create({
-      data: {
-        prestamoId: Number(prestamoId),
-        cobradorId: Number(user.id),
-        fecha: fecha ? new Date(fecha) : new Date(),
-        monto: String(monto),
-        tipoPago,
-        notas: notas || null,
-      },
+    // Create abono and update prestamo.estado atomically
+    const result = await prisma.$transaction(async (tx) => {
+      // Lock prestamo row to avoid race conditions
+      await tx.$executeRaw`SELECT id FROM "Prestamo" WHERE id = ${Number(prestamoId)} FOR UPDATE`;
+
+      const prestamo = await tx.prestamo.findUnique({ where: { id: Number(prestamoId) } });
+      if (!prestamo) throw new Error('Préstamo no encontrado');
+      if ((prestamo as any).estado === 'INACTIVO') throw new Error('No se puede abonar a un préstamo inactivo');
+
+      const abono = await tx.abono.create({
+        data: {
+          prestamoId: Number(prestamoId),
+          cobradorId: Number(user.id),
+          fecha: fecha ? new Date(fecha) : new Date(),
+          monto: String(monto),
+          tipoPago,
+          notas: notas || null,
+        },
+      });
+
+      // Recalculate suma de abonos para este préstamo
+      const agg = await tx.abono.aggregate({
+        where: { prestamoId: Number(prestamoId) },
+        _sum: { monto: true },
+      });
+      const sumMonto = agg._sum.monto ? Number(String(agg._sum.monto)) : 0;
+
+      // total a pagar según montoPrestado y tasa (coherente con la UI)
+      const totalPagar = Math.trunc(Number(String(prestamo.montoPrestado)) * (1 + Number(prestamo.tasa)));
+      if (sumMonto >= totalPagar) {
+        await tx.prestamo.update({
+          where: { id: Number(prestamoId) },
+          data: { estado: 'INACTIVO' } as Prisma.PrestamoUpdateInput,
+        });
+      }
+
+      return abono;
     });
-    return NextResponse.json({ abono }, { status: 201 });
+
+    return NextResponse.json({ abono: result }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
