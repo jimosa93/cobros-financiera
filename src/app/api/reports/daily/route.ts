@@ -17,8 +17,20 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const startParam = searchParams.get('start') || null;
+    const endParam = searchParams.get('end') || null;
     const dateParam = searchParams.get('date') || undefined;
-    const { start, end } = startEndOfDayUTC(dateParam);
+
+    let start: Date;
+    let end: Date;
+    if (startParam && endParam) {
+      start = new Date(startParam);
+      end = new Date(endParam);
+    } else {
+      const se = startEndOfDayUTC(dateParam);
+      start = se.start;
+      end = se.end;
+    }
 
     // total abonos (sum and count)
     const totalAbonos = await prisma.abono.aggregate({
@@ -79,8 +91,10 @@ export async function GET(request: NextRequest) {
       gastos: cajaMap.get('GASTO')?.monto ?? "0",
     };
 
+    const responseDate = dateParam ? dateParam : start.toISOString().substring(0, 10);
+
     return NextResponse.json({
-      date: dateParam || new Date().toISOString().substring(0, 10),
+      date: responseDate,
       totals: {
         abonosSum: String(totalAbonos._sum.monto ?? 0),
         abonosCount: totalAbonos._count.id ?? 0,

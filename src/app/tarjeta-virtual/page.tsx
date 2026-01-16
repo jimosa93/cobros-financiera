@@ -210,7 +210,7 @@ export default function TarjetaVirtualPage() {
                                 }}
                             >
                                 <div style={{ color: '#222', fontWeight: 600 }}>Monto Prestado:</div>
-                                <div style={{ color: '#222' }}>{prestamo?.montoPrestado ? Number(prestamo.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</div>
+                                <div style={{ color: '#222' }}>{prestamo?.montoPrestado ? Number(prestamo.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-'}</div>
 
                                 <div style={{ color: '#222', fontWeight: 600 }}>No de Cuotas:</div>
                                 <div style={{ color: '#222' }}>{prestamo?.cuotas ?? '-'}</div>
@@ -223,7 +223,7 @@ export default function TarjetaVirtualPage() {
                                             const tasaNum = Number(prestamo.tasa || 0);
                                             const totalPagar = montoNum * (1 + tasaNum);
                                             const valorCuota = prestamo.cuotas ? totalPagar / prestamo.cuotas : 0;
-                                            return valorCuota > 0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-';
+                                            return valorCuota > 0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-';
                                         })()
                                         : '-'
                                     }
@@ -246,7 +246,7 @@ export default function TarjetaVirtualPage() {
                                 </div>
 
                                 <div style={{ color: '#222', fontWeight: 600 }}>Abono Total:</div>
-                                <div style={{ color: '#222' }}>{abonos.length ? abonos.reduce((s, a) => s + Number(a.monto || 0), 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</div>
+                                <div style={{ color: '#222' }}>{abonos.length ? abonos.reduce((s, a) => s + Number(a.monto || 0), 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-'}</div>
 
                                 <div style={{ color: '#222', fontWeight: 600 }}>Saldo:</div>
                                 <div style={{ color: '#222' }}>
@@ -257,7 +257,7 @@ export default function TarjetaVirtualPage() {
                                         const totalPagar = montoNum * (1 + tasaNum);
                                         const abonoTotal = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
                                         const saldo = totalPagar - abonoTotal;
-                                        return isNaN(saldo) ? '-' : saldo.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+                                        return isNaN(saldo) ? '-' : saldo.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '');
                                     })()}
                                 </div>
                             </div>
@@ -304,7 +304,7 @@ export default function TarjetaVirtualPage() {
                                     {abonos.map(a => (
                                         <tr key={a.id} style={{ borderBottom: '1px solid #e6eef6', background: '#fff', color: '#222' }}>
                                             <td style={{ padding: 12, color: '#222' }}>{new Date(a.fecha).toLocaleDateString('es-ES')}</td>
-                                            <td style={{ padding: 12, color: '#222' }}>{Number(a.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
+                                            <td style={{ padding: 12, color: '#222' }}>{Number(a.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</td>
                                             <td style={{ padding: 12, color: '#222' }}>{a.tipoPago || '-'}</td>
                                             <td style={{ padding: 12, color: '#222' }}>{a.cobrador?.nombreCompleto || '-'}</td>
                                         </tr>

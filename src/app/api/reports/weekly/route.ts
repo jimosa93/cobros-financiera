@@ -19,8 +19,20 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const startParam = searchParams.get('start') || null;
+    const endParam = searchParams.get('end') || null;
     const ref = searchParams.get('ref') || undefined;
-    const { start, end } = startEndOfWeekUTC(ref);
+
+    let start: Date;
+    let end: Date;
+    if (startParam && endParam) {
+      start = new Date(startParam);
+      end = new Date(endParam);
+    } else {
+      const se = startEndOfWeekUTC(ref);
+      start = se.start;
+      end = se.end;
+    }
 
     // total abonos in week
     const totalAbonos = await prisma.abono.aggregate({
@@ -67,8 +79,18 @@ export async function GET(request: NextRequest) {
     });
     const byDay: Record<string, { monto: number; count: number }> = {};
     abonosList.forEach(a => {
-      const d = new Date(a.fecha as Date);
-      const key = d.toISOString().substring(0, 10);
+      const aDate = new Date(a.fecha as Date);
+      let key: string;
+      // If client provided startParam, compute day bucket relative to start to preserve client's local date labels.
+      if (startParam) {
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const dayIndex = Math.floor((aDate.getTime() - start.getTime()) / msPerDay);
+        const bucketDate = new Date(start.getTime() + dayIndex * msPerDay);
+        key = bucketDate.toISOString().substring(0, 10);
+      } else {
+        // fallback: use UTC date string
+        key = aDate.toISOString().substring(0, 10);
+      }
       if (!byDay[key]) byDay[key] = { monto: 0, count: 0 };
       byDay[key].monto += Number(String(a.monto));
       byDay[key].count += 1;
@@ -93,9 +115,12 @@ export async function GET(request: NextRequest) {
       gastos: cajaMap.get('GASTO')?.monto ?? "0",
     };
 
+    const weekStart = start.toISOString().substring(0, 10);
+    const weekEnd = new Date(end.getTime() - 1).toISOString().substring(0, 10);
+
     return NextResponse.json({
-      weekStart: start.toISOString().substring(0, 10),
-      weekEnd: new Date(end.getTime() - 1).toISOString().substring(0, 10),
+      weekStart,
+      weekEnd,
       totals: {
         abonosSum: String(totalAbonos._sum.monto ?? 0),
         abonosCount: totalAbonos._count.id ?? 0,

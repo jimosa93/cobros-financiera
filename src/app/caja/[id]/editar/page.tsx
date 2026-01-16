@@ -20,7 +20,7 @@ export default function EditCajaPage() {
   const [monto, setMonto] = useState('');
   const [nota, setNota] = useState('');
   const [fechaDisplay, setFechaDisplay] = useState('');
-  const [fechaISO, setFechaISO] = useState('');
+  const [fechaISOFull, setFechaISOFull] = useState('');
 
   useEffect(() => {
     if (status === 'loading') {
@@ -56,14 +56,14 @@ export default function EditCajaPage() {
         setNota(item.nota || '');
         const date = new Date(item.fecha);
         if (!isNaN(date.getTime())) {
-          setFechaISO(date.toISOString().substring(0, 10));
+          setFechaISOFull(date.toISOString());
           setFechaDisplay(date.toLocaleDateString('es-ES'));
         } else {
-          setFechaISO('');
+          setFechaISOFull('');
           setFechaDisplay('');
         }
-      } catch (e) {
-        console.error(e);
+      } catch {
+        console.error();
       } finally {
         setLoading(false);
       }
@@ -80,14 +80,14 @@ export default function EditCajaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id,
-          fecha: fechaISO,
+          fecha: fechaISOFull,
           tipo,
           monto: monto === '' ? 0 : Number(monto),
           nota,
         }),
       });
       if (!res.ok) throw new Error('Error actualizando');
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch { }
       router.push('/caja');
     } catch (e) {
       console.error(e);

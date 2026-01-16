@@ -73,18 +73,6 @@ export function Navbar() {
             )}
 
             {session.user.rol === 'ADMIN' && (
-                <Link href="/users" className="nav-link" style={{
-                    textDecoration: 'none',
-                    color: isActive('/users') ? '#0070f3' : '#666',
-                    fontWeight: isActive('/users') ? '600' : '400',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '4px',
-                    backgroundColor: isActive('/users') ? '#f0f7ff' : 'transparent'
-                }}>
-                    Usuarios
-                </Link>
-            )}
-            {session.user.rol === 'ADMIN' && (
                 <Link href="/reports" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/reports') ? '#0070f3' : '#666',
@@ -94,6 +82,18 @@ export function Navbar() {
                     backgroundColor: isActive('/reports') ? '#f0f7ff' : 'transparent'
                 }}>
                     Reportes
+                </Link>
+            )}
+            {session.user.rol === 'ADMIN' && (
+                <Link href="/users" className="nav-link" style={{
+                    textDecoration: 'none',
+                    color: isActive('/users') ? '#0070f3' : '#666',
+                    fontWeight: isActive('/users') ? '600' : '400',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '4px',
+                    backgroundColor: isActive('/users') ? '#f0f7ff' : 'transparent'
+                }}>
+                    Usuarios
                 </Link>
             )}
         </>

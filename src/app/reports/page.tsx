@@ -28,18 +28,26 @@ export default function ReportsIndex() {
     (async () => {
       try {
         const now = new Date();
-        const ref = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const res = await fetch(`/api/reports/caja?ref=${ref}`);
+        const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const endLocal = new Date(startLocal.getTime() + 24 * 60 * 60 * 1000);
+        const res = await fetch(`/api/reports/caja?start=${encodeURIComponent(startLocal.toISOString())}&end=${encodeURIComponent(endLocal.toISOString())}`);
         const j = await res.json();
+        // console.log('j caja', j);
         const rows: CajaToday[] = j.rows || [];
-        // rows are ordered newest first; find today's row and previous day's cajaFin
-        const idx = rows.findIndex(r => r.fecha === ref);
+        const idx = rows.findIndex(r => r.fecha === startLocal.toISOString().substring(0, 10));
         const todayRow = idx >= 0 ? rows[idx] : (rows.length > 0 ? rows[0] : null);
         setToday(todayRow);
-        if (idx >= 0 && idx + 1 < rows.length) {
-          setPrevCajaFin(Number(rows[idx + 1].cajaFin || 0));
-        } else if (rows.length > 1) {
-          setPrevCajaFin(Number(rows[1].cajaFin || 0));
+
+        if (todayRow) {
+          // If server returned previous day row, use it; otherwise derive previous cajaFin from today's row
+          if (idx >= 0 && idx + 1 < rows.length) {
+            setPrevCajaFin(Number(rows[idx + 1].cajaFin || 0));
+          } else if (rows.length > 1) {
+            setPrevCajaFin(Number(rows[1].cajaFin || 0));
+          } else {
+            // single-row case: prevCajaFin = today.cajaFin - today.cuentasDia
+            setPrevCajaFin(Number((todayRow.cajaFin || 0) - (todayRow.cuentasDia || 0)));
+          }
         } else {
           setPrevCajaFin(0);
         }
@@ -90,7 +98,7 @@ export default function ReportsIndex() {
           <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
             <div>
               <div className="muted">Fecha</div>
-              <div className="value">{today ? new Date(today.fecha + 'T00:00:00').toLocaleDateString('es-ES') : '-'}</div>
+              <div className="value">{today ? new Date(today.fecha + 'T00:00:00').toLocaleDateString('es-ES') : "-"}</div>
             </div>
             <div>
               <div className="muted">Caja Inicial</div>

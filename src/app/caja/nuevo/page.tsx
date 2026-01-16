@@ -14,8 +14,8 @@ export default function NuevoCajaPage() {
   const [monto, setMonto] = useState('');
   const [nota, setNota] = useState('');
   const [guardando, setGuardando] = useState(false);
-
-  const fechaISO = new Date().toISOString().substring(0, 10); // YYYY-MM-DD
+  const now = new Date();
+  const fechaISOFull = now.toISOString(); // full ISO with time for storage  
   const fechaDisplay = new Date().toLocaleDateString('es-ES'); // dd/mm/yyyy
 
   useEffect(() => {
@@ -33,14 +33,14 @@ export default function NuevoCajaPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fecha: fechaISO,
+          fecha: fechaISOFull,
           tipo,
           monto: monto === '' ? 0 : Number(monto),
           nota,
         }),
       });
       if (!res.ok) throw new Error('Error creando movimiento');
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push('/caja');
     } catch (err) {
       console.error(err);

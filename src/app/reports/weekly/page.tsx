@@ -47,8 +47,13 @@ export default function ReportsWeeklyPage() {
       setLoading(true);
       try {
         const now = new Date();
-        const localRef = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const res = await fetch(`/api/reports/weekly?ref=${localRef}`);
+        const dayOfWeek = (now.getDay() + 6) % 7; // 0 = Monday
+        const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
+        const endLocal = new Date(startLocal.getTime() + 6 * 24 * 60 * 60 * 1000); // next Monday exclusive
+        const params = new URLSearchParams();
+        params.set('start', startLocal.toISOString());
+        params.set('end', endLocal.toISOString());
+        const res = await fetch(`/api/reports/weekly?${params.toString()}`);
         const json = await res.json();
         setData(json);
       } catch (e) {
@@ -189,7 +194,7 @@ export default function ReportsWeeklyPage() {
             <tbody>
               {Object.entries(data.byDay as Record<string, { monto: number; count: number }>).map(([day, v]) => (
                 <tr key={day}>
-                  <td className="table-cell">{new Date(day).toLocaleDateString('es-ES')}</td>
+                  <td className="table-cell">{new Date(day).toLocaleDateString("es-ES", { timeZone: "UTC" })}</td>
                   <td className="table-cell" style={{ textAlign: 'right' }}>${Number(v.monto).toLocaleString()}</td>
                   <td className="table-cell" style={{ textAlign: 'right' }}>{v.count}</td>
                 </tr>

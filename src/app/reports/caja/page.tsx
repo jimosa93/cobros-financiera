@@ -26,10 +26,15 @@ export default function ReportsCajaPage() {
     (async () => {
       setLoading(true);
       try {
-        // pass local date ref to API to avoid timezone issues (YYYY-MM-DD)
+        // request a historical range (last 30 days including today) by sending explicit start/end ISO instants
         const now = new Date();
-        const ref = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const res = await fetch(`/api/reports/caja?ref=${ref}`);
+        const DAYS = 30;
+        const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (DAYS - 1), 0, 0, 0, 0); // 29 days before today
+        const endLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0); // exclusive next day
+        const params = new URLSearchParams();
+        params.set('start', startLocal.toISOString());
+        params.set('end', endLocal.toISOString());
+        const res = await fetch(`/api/reports/caja?${params.toString()}`);
         const j = await res.json();
         setRows(j.rows || []);
       } catch (e) {

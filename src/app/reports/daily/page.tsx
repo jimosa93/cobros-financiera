@@ -57,8 +57,12 @@ export default function ReportsDailyPage() {
       setLoading(true);
       try {
         const now = new Date();
-        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const res = await fetch(`/api/reports/daily?date=${localDate}`);
+        const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const endLocal = new Date(startLocal.getTime() + 24 * 60 * 60 * 1000);
+        const params = new URLSearchParams();
+        params.set('start', startLocal.toISOString());
+        params.set('end', endLocal.toISOString());
+        const res = await fetch(`/api/reports/daily?${params.toString()}`);
         const json = await res.json();
         setData(json);
       } catch (e) {
