@@ -36,15 +36,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!prestamoId || !monto || !tipoPago) {
       return NextResponse.json({ error: 'Campos faltantes' }, { status: 400 });
     }
+    // If the incoming fecha is a date-only string (YYYY-MM-DD) we will NOT overwrite
+    // the existing timestamp to avoid losing the original time component.
+    const updateData: any = {
+      prestamoId: Number(prestamoId),
+      monto: String(monto),
+      tipoPago,
+      notas: notas || null,
+    };
+    if (fecha && typeof fecha === 'string' && fecha.includes('T')) {
+      updateData.fecha = new Date(fecha);
+    } else if (fecha && /^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) {
+      // date-only provided -- do not overwrite existing timestamp
+    }
+
     const abono = await prisma.abono.update({
       where: { id: idNum },
-      data: {
-        prestamoId: Number(prestamoId),
-        monto: String(monto),
-        tipoPago,
-        notas: notas || null,
-        fecha: fecha ? new Date(fecha) : undefined,
-      },
+      data: updateData,
     });
     // Recalculate estado del préstamo asociado
     try {

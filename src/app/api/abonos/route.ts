@@ -11,14 +11,47 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
     const search = searchParams.get('search') || '';
     const prestamoId = searchParams.get('prestamoId');
+    // support either fecha_from/fecha_to (date-only or ISO) or start/end ISO
+    let fechaFrom = searchParams.get('fecha_from') || searchParams.get('fechaFrom') || null;
+    let fechaTo = searchParams.get('fecha_to') || searchParams.get('fechaTo') || null;
+    const startParam = searchParams.get('start') || null;
+    const endParam = searchParams.get('end') || null;
+    if (startParam && endParam) {
+      fechaFrom = startParam;
+      fechaTo = endParam;
+    }
+    const tipoPagos = searchParams.getAll('tipoPago') || [];
 
-    let where: any = {};
+    let where: Prisma.AbonoWhereInput = {};
+    // base filters: prestamoId or search in notas
     if (prestamoId) {
       where = { prestamoId: Number(prestamoId) };
     } else if (search) {
       where = {
         OR: [{ notas: { contains: search, mode: 'insensitive' } }],
       };
+    }
+
+    // date range filter
+    if (fechaFrom || fechaTo) {
+      const fechaFilter: Prisma.DateTimeFilter = {};
+      if (fechaFrom) fechaFilter.gte = new Date(fechaFrom);
+      if (fechaTo) {
+        // If fechaTo contains a time (ISO), use it directly as exclusive end.
+        // If it's a date-only string (YYYY-MM-DD), treat it as inclusive date and add one day.
+        if (fechaTo.includes('T')) {
+          fechaFilter.lt = new Date(fechaTo);
+        } else {
+          const maybeDate = new Date(fechaTo);
+          fechaFilter.lt = new Date(maybeDate.getTime() + 24 * 60 * 60 * 1000);
+        }
+      }
+      where = { ...where, fecha: fechaFilter };
+    }
+
+    // tipoPago filter (in array)
+    if (tipoPagos && tipoPagos.length > 0) {
+      where = { ...where, tipoPago: { in: tipoPagos } };
     }
 
     const total = await prisma.abono.count({ where });
@@ -66,7 +99,7 @@ export async function POST(request: NextRequest) {
 
       const prestamo = await tx.prestamo.findUnique({ where: { id: Number(prestamoId) } });
       if (!prestamo) throw new Error('Préstamo no encontrado');
-      if ((prestamo as any).estado === 'INACTIVO') throw new Error('No se puede abonar a un préstamo inactivo');
+      if ((prestamo as unknown as { estado?: string }).estado === 'INACTIVO') throw new Error('No se puede abonar a un préstamo inactivo');
 
       const abono = await tx.abono.create({
         data: {

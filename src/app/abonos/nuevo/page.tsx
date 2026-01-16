@@ -223,7 +223,7 @@ export default function NuevoAbonoPage() {
                     <div><strong>Valor prestado:</strong> <span style={{ color: '#222' }}>{(lastAbono.prestamo?.montoPrestado ? Number(lastAbono.prestamo.montoPrestado) : (prestamoDetails ? Number(prestamoDetails.montoPrestado ?? '0') : 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
                     <div><strong>Abono:</strong> <span style={{ color: '#222' }}>{Number(lastAbono.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
                     <div><strong>Saldo:</strong> <span style={{ color: '#222' }}>{(((lastAbono.prestamo?.montoPrestado ? Number(lastAbono.prestamo.montoPrestado) : (prestamoDetails ? Number(prestamoDetails.montoPrestado ?? '0') : 0)) * (1 + (lastAbono.prestamo?.tasa ? Number(lastAbono.prestamo.tasa) : (prestamoDetails ? Number(prestamoDetails.tasa ?? 0) : 0)))) - Number(lastAbonoSum || sumaAbonos)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
-                    <div><strong>Fecha:</strong> <span style={{ color: '#222' }}>{lastAbono.fecha ? new Date(lastAbono.fecha).toISOString().substring(0, 10) : '-'}</span></div>
+                    <div><strong>Fecha:</strong> <span style={{ color: '#222' }}>{lastAbono.fecha ? new Date(lastAbono.fecha).toLocaleDateString("es-CO") : '-'}</span></div>
                   </div>
                 ) : (
                   <div style={{ color: '#666' }}>No hay abonos registrados</div>

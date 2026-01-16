@@ -82,7 +82,7 @@ export default function AbonosPage() {
                 {abonos.length === 0 && <tr><td colSpan={8} className="table-cell" style={{ textAlign: 'center', color: '#888' }}>No hay abonos</td></tr>}
                 {abonos.map(a => (
                   <tr key={a.id}>
-                    <td className="table-cell">{new Date(a.fecha).toISOString().substring(0, 10)}</td>
+                    <td className="table-cell">{new Date(a.fecha).toLocaleDateString('es-ES')}</td>
                     <td className="table-cell">{a.prestamo?.cliente?.nombreCompleto || '-'}</td>
                     <td className="table-cell">#{a.prestamoId}</td>
                     <td className="table-cell">{Number(a.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>

@@ -91,7 +91,7 @@ export default function EditAbonoPage() {
           <Field label="Id Préstamo">
             <Select name="prestamoId" value={form.prestamoId || ""} onChange={handleChange}>
               <option value="">Seleccione préstamo...</option>
-              {prestamos.map((p: any) => <option key={p.id} value={p.id}>#{p.id} - {p.cliente?.nombreCompleto} - {Number(p.montoPrestado).toLocaleString('es-CO')}</option>)}
+              {prestamos.map((p: any) => <option key={p.id} value={p.id}>#{p.id} - {p.cliente?.nombreCompleto} - {Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</option>)}
             </Select>
           </Field>
           <Field label="Monto">

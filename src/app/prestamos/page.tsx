@@ -25,7 +25,7 @@ interface Prestamo {
   fechaInicio?: string;
 }
 
-function RowSortable({ p, idx, children }: { p: Prestamo, idx: number; children: React.ReactNode }) {
+function RowSortable({ p, idx, children, rowClassName }: { p: Prestamo, idx: number; children: React.ReactNode; rowClassName?: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -50,7 +50,7 @@ function RowSortable({ p, idx, children }: { p: Prestamo, idx: number; children:
     : first;
 
   return (
-    <tr ref={setNodeRef} style={style}>
+    <tr ref={setNodeRef} className={rowClassName} style={style}>
       {firstWithHandle}
       {rest}
     </tr>
@@ -66,6 +66,7 @@ export default function PrestamosPage() {
   const [loading, setLoading] = useState(true);
   // removed unused error state
   const [abonoSums, setAbonoSums] = useState<Record<number, number>>({});
+  const [abonosToday, setAbonosToday] = useState<Set<number>>(new Set());
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -99,6 +100,18 @@ export default function PrestamosPage() {
         const map: Record<number, number> = {};
         sums.forEach(s => { map[s.id] = s.sum; });
         setAbonoSums(map);
+        // fetch prestamo ids that have abonos today
+        try {
+          const now = new Date();
+          const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+          const endLocal = new Date(startLocal.getTime() + 24 * 60 * 60 * 1000);
+          const r2 = await fetch(`/api/reports/abonos-today?start=${encodeURIComponent(startLocal.toISOString())}&end=${encodeURIComponent(endLocal.toISOString())}`);
+          const j2 = await r2.json();
+          const ids: number[] = j2.prestamoIds || [];
+          setAbonosToday(new Set(ids));
+        } catch {
+          setAbonosToday(new Set());
+        }
       } catch {
         setAbonoSums({});
       } finally {
@@ -144,9 +157,6 @@ export default function PrestamosPage() {
     else toast.addToast({ message: info.error || 'Error eliminando préstamo', type: 'error' });
   }
 
-  const headerStyle: React.CSSProperties = {};
-  const cellStyle: React.CSSProperties = {};
-
   return (
     <div className="app-bg">
       <Navbar />
@@ -191,22 +201,23 @@ export default function PrestamosPage() {
                       )}
                       {prestamos.map((p, idx) => {
                         const { valorCuota, totalPagar } = calculate(p.montoPrestado, p.tasa, p.cuotas);
+                        const highlightClass = abonosToday.has(p.id) ? 'row-highlight' : undefined;
                         return (
-                          <RowSortable p={p} idx={idx} key={p.id}>
+                          <RowSortable p={p} idx={idx} key={p.id} rowClassName={highlightClass}>
                             <td className="table-cell" style={{ cursor: 'grab', fontWeight: 500 }}>::</td>
                             <td className="table-cell">{p.id}</td>
                             <td className="table-cell">{p.cliente.nombreCompleto}</td>
-                            <td className="table-cell">{Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
+                            <td className="table-cell">{Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</td>
                             <td className="table-cell">{p.cuotas}</td>
                             <td className="table-cell">{Math.round(p.tasa * 100)}%</td>
-                            <td className="table-cell">{valorCuota > 0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
-                            <td className="table-cell">{totalPagar > 0 ? totalPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : ''}</td>
-                            <td className="table-cell">{(abonoSums[p.id] || 0) > 0 ? (abonoSums[p.id] || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
-                            <td className="table-cell">{(totalPagar - (abonoSums[p.id] || 0)) >= 0 ? (totalPagar - (abonoSums[p.id] || 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '-'}</td>
-                            <td className="table-cell">{p.fechaInicio ? p.fechaInicio.substr(0, 10) : '-'}</td>
+                            <td className="table-cell">{valorCuota > 0 ? valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : ''}</td>
+                            <td className="table-cell">{totalPagar > 0 ? totalPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : ''}</td>
+                            <td className="table-cell">{(abonoSums[p.id] || 0) > 0 ? (abonoSums[p.id] || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-'}</td>
+                            <td className="table-cell">{(totalPagar - (abonoSums[p.id] || 0)) >= 0 ? (totalPagar - (abonoSums[p.id] || 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-'}</td>
+                            <td className="table-cell">{p.fechaInicio ? new Date(p.fechaInicio).toLocaleDateString('es-ES') : '-'}</td>
                             <td className="table-cell">{valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0}</td>
                             {isAdmin ? (
-                              <td className="table-cell" style={{ background: 'none', display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
+                              <td className="table-cell" style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
                                 <button aria-label="Editar" title="Editar" onClick={() => window.location.href = `/prestamos/${p.id}/editar`} style={{ padding: 8, border: '1px solid #bbb', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                 </button>

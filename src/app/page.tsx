@@ -53,6 +53,16 @@ export default function Home() {
           />
 
           <DashboardCard
+            title="Tarjeta virtual"
+            description="Ver tarjeta virtual de cliente/prestamo"
+            href="/tarjeta-virtual"
+            color="#06b6d4"
+            cardBackground="#f0f9fb"
+            titleColor="#044e54"
+            descColor="#0b5257"
+          />
+
+          <DashboardCard
             title="Abonos"
             description="Registrar y consultar abonos"
             href="/abonos"
@@ -73,16 +83,13 @@ export default function Home() {
             color="#10b981"
           />
 
-          {userRole === 'ADMIN' && (
-            <>
-              <DashboardCard
-                title="Usuarios"
-                description="Gestionar usuarios del sistema"
-                href="/users"
-                color="#8b5cf6"
-              />
-            </>
-          )}
+          <DashboardCard
+            title="Reportes"
+            description="Acceder a informes y reportes del sistema"
+            href="/reports"
+            color="#0ea5a0"
+          />
+
           {userRole === 'ADMIN' && (
             <DashboardCard
               title="Caja"
@@ -91,14 +98,12 @@ export default function Home() {
               color="#f97316"
             />
           )}
+
           <DashboardCard
-            title="Tarjeta virtual"
-            description="Ver tarjeta virtual de cliente/prestamo"
-            href="/tarjeta-virtual"
-            color="#06b6d4"
-            cardBackground="#f0f9fb"
-            titleColor="#044e54"
-            descColor="#0b5257"
+            title="Usuarios"
+            description="Gestionar usuarios del sistema"
+            href="/users"
+            color="#8b5cf6"
           />
         </div>
 

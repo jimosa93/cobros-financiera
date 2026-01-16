@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
@@ -45,7 +46,9 @@ export default function ReportsWeeklyPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/reports/weekly');
+        const now = new Date();
+        const localRef = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const res = await fetch(`/api/reports/weekly?ref=${localRef}`);
         const json = await res.json();
         setData(json);
       } catch (e) {
@@ -54,7 +57,48 @@ export default function ReportsWeeklyPage() {
         setLoading(false);
       }
     })();
-  }, [status]);
+  }, [status, router, session]);
+
+  // consignaciones for the week
+  interface AbonoConsignacion {
+    id: number;
+    fecha: string;
+    prestamoId: number;
+    monto: string;
+    tipoPago: string;
+    prestamo?: { cliente?: { nombreCompleto?: string } };
+    cobrador?: { nombreCompleto?: string };
+  }
+  const [consignaciones, setConsignaciones] = useState<AbonoConsignacion[]>([]);
+  const [consignacionesSum, setConsignacionesSum] = useState<string>("0");
+  useEffect(() => {
+    if (!data) return;
+    (async () => {
+      try {
+        // build ISO range from local weekStart 00:00 to day after weekEnd 00:00 (exclusive)
+        // Use date-only params for week range; API will treat fecha_to as inclusive day
+        // build explicit start/end ISO for the week (local)
+        const [ys, ms, ds] = (data.weekStart || '').split('-').map(Number);
+        const [ye, me, de] = (data.weekEnd || '').split('-').map(Number);
+        const startLocal = new Date(ys, ms - 1, ds, 0, 0, 0, 0);
+        const endLocal = new Date(ye, me - 1, de, 0, 0, 0, 0);
+        // make end exclusive by adding one day
+        endLocal.setDate(endLocal.getDate() + 1);
+        const params = new URLSearchParams();
+        params.set('start', startLocal.toISOString());
+        params.set('end', endLocal.toISOString());
+        params.append('tipoPago', 'CON-SUPERVISOR');
+        params.append('tipoPago', 'CON-JEFE');
+        params.set('pageSize', '1000');
+        const res = await fetch(`/api/abonos?${params.toString()}`);
+        const j = await res.json();
+        setConsignaciones(j.abonos || []);
+        setConsignacionesSum(j.sumMonto ?? "0");
+      } catch {
+        setConsignaciones([]);
+      }
+    })();
+  }, [data]);
 
   if (loading) return <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
     <Navbar />
@@ -90,8 +134,11 @@ export default function ReportsWeeklyPage() {
     <div className="app-bg">
       <Navbar />
       <main className="app-main">
+        <div style={{ marginBottom: 12 }}>
+          <Link href="/reports" aria-label="Volver a Reportes" style={{ color: '#0070f3', textDecoration: 'none' }}>← Atrás</Link>
+        </div>
         <h1 className="page-title">
-          Resumen Semanal — {data.weekStart} a {data.weekEnd}{weekNumber ? ` (Semana ${weekNumber})` : ''}
+          Resumen Semanal — {new Date(data.weekStart + 'T00:00:00').toLocaleDateString('es-ES')} a {new Date(data.weekEnd + 'T00:00:00').toLocaleDateString('es-ES')}{weekNumber ? ` (Semana ${weekNumber})` : ''}
         </h1>
         <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
           <div className="card kpi">
@@ -142,8 +189,8 @@ export default function ReportsWeeklyPage() {
             <tbody>
               {Object.entries(data.byDay as Record<string, { monto: number; count: number }>).map(([day, v]) => (
                 <tr key={day}>
-                  <td className="table-cell">{day}</td>
-                  <td className="table-cell" style={{ textAlign: 'right' }}>{Number(v.monto).toLocaleString()}</td>
+                  <td className="table-cell">{new Date(day).toLocaleDateString('es-ES')}</td>
+                  <td className="table-cell" style={{ textAlign: 'right' }}>${Number(v.monto).toLocaleString()}</td>
                   <td className="table-cell" style={{ textAlign: 'right' }}>{v.count}</td>
                 </tr>
               ))}
@@ -165,8 +212,42 @@ export default function ReportsWeeklyPage() {
               {(data.byCobrador as Array<{ cobradorId: number; nombre: string | null; monto: string; count: number }>).map((c) => (
                 <tr key={c.cobradorId}>
                   <td className="table-cell">{c.nombre || `#${c.cobradorId}`}</td>
-                  <td className="table-cell" style={{ textAlign: 'right' }}>{Number(c.monto).toLocaleString()}</td>
+                  <td className="table-cell" style={{ textAlign: 'right' }}>${Number(c.monto).toLocaleString()}</td>
                   <td className="table-cell" style={{ textAlign: 'right' }}>{c.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <h2 className="section-title" style={{ marginTop: 20 }}>Informe consignaciones</h2>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <div className="card kpi">
+            <div className="muted">Total consignaciones</div>
+            <div className="value small">${Number(consignacionesSum || 0).toLocaleString()}</div>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th className="table-header">Fecha</th>
+                <th className="table-header">Cliente</th>
+                <th className="table-header">Id préstamo</th>
+                <th className="table-header" style={{ textAlign: 'right' }}>Monto</th>
+                <th className="table-header">Tipo de pago</th>
+                <th className="table-header">Cobrador</th>
+              </tr>
+            </thead>
+            <tbody>
+              {consignaciones.length === 0 && <tr><td colSpan={6} className="table-cell" style={{ textAlign: 'center' }}>No hay consignaciones</td></tr>}
+              {consignaciones.map((c) => (
+                <tr key={c.id}>
+                  <td className="table-cell">{new Date(c.fecha).toLocaleDateString("es-ES")}</td>
+                  <td className="table-cell">{c.prestamo?.cliente?.nombreCompleto || '-'}</td>
+                  <td className="table-cell">#{c.prestamoId}</td>
+                  <td className="table-cell" style={{ textAlign: 'right' }}>{Number(c.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
+                  <td className="table-cell">{c.tipoPago}</td>
+                  <td className="table-cell">{c.cobrador?.nombreCompleto || '-'}</td>
                 </tr>
               ))}
             </tbody>

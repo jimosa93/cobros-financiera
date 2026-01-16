@@ -258,7 +258,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: 1px solid #eee;
   border-radius: 8px;
   background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 .card.kpi {
   min-width: 180px;
@@ -280,8 +280,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .table-wrap {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .table-header {
   text-align: left;
@@ -326,14 +327,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: white;
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
   text-decoration: none;
   color: inherit;
 }
 .dashboard-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .dashboard-card .icon {
   width: 48px;
@@ -351,5 +352,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: white;
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Highlighted table row (e.g., has abono today) */
+.row-highlight {
+  background: #a9fbd5;
+}
+
+.row-highlight .table-cell {
+  background: #a9fbd5;
 }
