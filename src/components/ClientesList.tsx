@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/Toast';
-import Link from 'next/link';
 import { Navbar } from './Navbar';
-import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
+
 import { IconButton, Pagination } from '@/components/TableControls';
 import SearchBar from './SearchBar';
 import Spinner from './Spinner';
@@ -36,7 +35,7 @@ export default function ClientesList() {
   const [search, setSearch] = useState('');
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
-    limit: 10,
+    limit: 50,
     total: 0,
     totalPages: 0,
   });
@@ -219,7 +218,9 @@ export default function ClientesList() {
                               <IconButton type="delete" onClick={() => handleDelete(cliente.id)} />
                             </>
                           )}
-                          <IconButton type="card" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?clienteId=${cliente.id}`} />
+                          {cliente.prestamos && cliente.prestamos.length > 0 && (
+                            <IconButton type="card" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?clienteId=${cliente.id}`} />
+                          )}
                         </div>
                       </td>
                     </tr>

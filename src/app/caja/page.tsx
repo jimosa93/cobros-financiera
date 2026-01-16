@@ -32,11 +32,12 @@ export default function CajaPage() {
   const fetchData = async (p = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/caja?page=${p}&limit=10`);
+      const res = await fetch(`/api/caja?page=${p}&limit=50`);
       const d = await res.json();
       setItems(d.caja || []);
       setTotalPages(Math.max(1, d.pagination?.totalPages || 1));
-    } catch (e) {
+    } catch (error) {
+      console.error('Error fetching caja data:', error);
       setItems([]);
     } finally {
       setLoading(false);
@@ -58,7 +59,7 @@ export default function CajaPage() {
       <main style={{ padding: '2rem', maxWidth: 1200, margin: '0 auto' }}>
         <h1 style={{ marginBottom: '1rem', color: '#333' }}>Caja</h1>
 
-        <div style={{ marginBottom: '1rem', ...cardStyle as any }}>
+        <div style={{ marginBottom: '1rem', ...cardStyle as React.CSSProperties }}>
           <SearchBar
             value={query}
             onChange={(v) => { setQuery(v); setPage(1); }}
@@ -107,7 +108,8 @@ export default function CajaPage() {
                               // refetch
                               fetchData(page);
                               toast.addToast({ message: 'Movimiento eliminado', type: 'success' });
-                            } catch (e) {
+                            } catch (error) {
+                              console.error('Error deleting caja:', error);
                               toast.addToast({ message: 'Error eliminando movimiento', type: 'error' });
                             }
                           }} />

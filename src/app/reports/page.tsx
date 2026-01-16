@@ -95,7 +95,7 @@ export default function ReportsIndex() {
         {/* Today's caja quick view */}
         <div style={{ marginTop: 20, marginBottom: 12 }}>
           <h2 className="section-title">Informe Caja — Hoy</h2>
-          <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+          <div className="card report-cards">
             <div>
               <div className="muted">Fecha</div>
               <div className="value">{today ? new Date(today.fecha + 'T00:00:00').toLocaleDateString('es-ES') : "-"}</div>

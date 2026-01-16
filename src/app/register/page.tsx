@@ -86,10 +86,11 @@ export default function RegisterPage() {
                     fechaTecnico: '',
                     fechaSoat: '',
                 });
-                try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) {}
+                try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
                 router.push('/users');
             }
-        } catch (err) {
+        } catch (error) {
+            console.error('Error creating user:', error);
             setError('Ocurrió un error al crear el usuario');
         } finally {
             setLoading(false);

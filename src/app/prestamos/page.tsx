@@ -269,7 +269,13 @@ export default function PrestamosPage() {
                                 <button aria-label="Eliminar" title="Eliminar" onClick={() => eliminarPrestamo(p.id)} style={{ padding: 8, border: '1px solid #e57373', background: '#e57373', borderRadius: 6, cursor: 'pointer' }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M14 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                 </button>
-                                <button aria-label="Tarjeta" title="Tarjeta" onClick={() => window.location.href = `/tarjeta-virtual?prestamoId=${p.id}`} style={{ padding: 8, border: '1px solid #ccc', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
+                                <button aria-label="Tarjeta" title="Tarjeta" onClick={() => {
+                                  const clienteIdParam = (p as unknown as { cliente?: { id: number } }).cliente?.id ?? (p as unknown as { clienteId?: number }).clienteId;
+                                  const qs = new URLSearchParams();
+                                  qs.set('prestamoId', String(p.id));
+                                  if (clienteIdParam) qs.set('clienteId', String(clienteIdParam));
+                                  window.location.href = `/tarjeta-virtual?${qs.toString()}`;
+                                }} style={{ padding: 8, border: '1px solid #ccc', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                 </button>
                               </td>) : (

@@ -62,11 +62,12 @@ export default function EditCajaPage() {
           setFechaISOFull('');
           setFechaDisplay('');
         }
-      } catch {
-        console.error();
+      } catch (error) {
+        console.error('Error fetching caja item:', error);
       } finally {
         setLoading(false);
       }
+      return;
     };
     if (id) fetchData();
   }, [id, session, status, router]);
@@ -90,7 +91,7 @@ export default function EditCajaPage() {
       try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Movimiento actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch { }
       router.push('/caja');
     } catch (e) {
-      console.error(e);
+      console.error('Error updating caja:', e);
       alert('Error actualizando movimiento');
     } finally {
       setGuardando(false);

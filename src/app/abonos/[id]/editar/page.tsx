@@ -15,9 +15,8 @@ export default function EditAbonoPage() {
   const router = useRouter();
   const params = useParams();
   const [loading, setLoading] = useState(true);
-  const [abono, setAbono] = useState<any>(null);
-  const [prestamos, setPrestamos] = useState<any[]>([]);
-  const [form, setForm] = useState<any>({});
+  const [prestamos, setPrestamos] = useState<{ id: number; cliente?: { nombreCompleto: string }; montoPrestado: number }[]>([]);
+  const [form, setForm] = useState<{ prestamoId: string; monto: string; tipoPago: string; notas: string; fecha: string }>({ prestamoId: "", monto: "", tipoPago: "", notas: "", fecha: "" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export default function EditAbonoPage() {
       const r = await fetch(`/api/abonos/${params.id}`);
       const d = await r.json();
       if (d.abono) {
-        setAbono(d.abono);
         setForm({
           prestamoId: d.abono.prestamoId?.toString() || "",
           monto: d.abono.monto || "",
@@ -52,9 +50,9 @@ export default function EditAbonoPage() {
   }
   if (!session || session.user.rol !== "ADMIN") { router.replace("/"); return null; }
 
-  const handleChange = (e: any) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
     try {
@@ -73,8 +71,8 @@ export default function EditAbonoPage() {
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
       try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push("/abonos");
-    } catch (err: any) {
-      alert(err.message || "Error");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error");
     } finally {
       setSaving(false);
     }
@@ -91,7 +89,7 @@ export default function EditAbonoPage() {
           <Field label="Id Préstamo">
             <Select name="prestamoId" value={form.prestamoId || ""} onChange={handleChange}>
               <option value="">Seleccione préstamo...</option>
-              {prestamos.map((p: any) => <option key={p.id} value={p.id}>#{p.id} - {p.cliente?.nombreCompleto} - {Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</option>)}
+              {prestamos.map((p: { id: number; cliente?: { nombreCompleto: string }; montoPrestado: number }) => <option key={p.id} value={p.id}>#{p.id} - {p.cliente?.nombreCompleto} - {Number(p.montoPrestado).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</option>)}
             </Select>
           </Field>
           <Field label="Monto">

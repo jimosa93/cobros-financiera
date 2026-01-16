@@ -31,14 +31,17 @@ export default function UsersPage() {
   const toast = useToast();
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/users?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`)
-      .then(r => r.json())
-      .then(data => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/users?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`);
+        const data = await res.json();
         setUsers(data.users || []);
         setTotal(data.total || 0);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [page, pageSize, query]);
 
   async function eliminar(id: number) {

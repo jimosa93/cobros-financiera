@@ -38,8 +38,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     // If the incoming fecha is a date-only string (YYYY-MM-DD) we will NOT overwrite
     // the existing timestamp to avoid losing the original time component.
-    const updateData: any = {
-      prestamoId: Number(prestamoId),
+    const updateData: Prisma.AbonoUpdateInput = {
+      prestamo: { connect: { id: Number(prestamoId) } },
       monto: String(monto),
       tipoPago,
       notas: notas || null,

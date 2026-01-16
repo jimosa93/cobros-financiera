@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 // GET - Obtener un cliente por ID
 export async function GET(
@@ -106,7 +107,7 @@ export async function PUT(
     return NextResponse.json({ cliente: clienteActualizado });
   } catch (error) {
     console.error('Error updating cliente:', error);
-    if ((error as any).code === 'P2025') {
+    if ((error as PrismaClientKnownRequestError).code === 'P2025') {
       return NextResponse.json(
         { error: 'Cliente no encontrado' },
         { status: 404 }
@@ -176,7 +177,7 @@ export async function DELETE(
     );
   } catch (error) {
     console.error('Error deleting cliente:', error);
-    if ((error as any).code === 'P2025') {
+    if ((error as PrismaClientKnownRequestError).code === 'P2025') {
       return NextResponse.json(
         { error: 'Cliente no encontrado' },
         { status: 404 }

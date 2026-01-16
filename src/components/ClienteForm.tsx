@@ -19,7 +19,7 @@ interface ClienteFormProps {
 
 export default function ClienteForm({ clienteId, initialData }: ClienteFormProps) {
     const router = useRouter();
-  const toast = useToast();
+    const toast = useToast();
     const [formData, setFormData] = useState<ClienteFormData>({
         nombreCompleto: initialData?.nombreCompleto || '',
         celular: initialData?.celular || '',
@@ -93,7 +93,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                 throw new Error(data.error || `Error al ${clienteId ? 'actualizar' : 'crear'} cliente`);
             }
 
-            try { toast.addToast({ message: clienteId ? 'Cliente actualizado' : 'Cliente creado', type: 'success' }); } catch (e) {}
+            try { toast.addToast({ message: clienteId ? 'Cliente actualizado' : 'Cliente creado', type: 'success' }); } catch (e) { }
             router.push('/clientes');
             router.refresh();
         } catch (err) {

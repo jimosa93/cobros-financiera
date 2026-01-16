@@ -5,16 +5,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
-export function Navbar() {
+function NavLinks() {
     const { data: session } = useSession();
     const pathname = usePathname();
-    const [isOpen, setIsOpen] = useState(false);
-
-    if (!session) return null;
-
     const isActive = (path: string) => pathname === path;
-
-    const NavLinks = () => (
+    return (
         <>
             <Link href="/" className="nav-link" style={{
                 textDecoration: 'none',
@@ -59,7 +54,7 @@ export function Navbar() {
             }}>
                 Abonos
             </Link>
-            {session.user.rol === 'ADMIN' && (
+            {session?.user.rol === 'ADMIN' && (
                 <Link href="/caja" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/caja') ? '#0070f3' : '#666',
@@ -72,7 +67,7 @@ export function Navbar() {
                 </Link>
             )}
 
-            {session.user.rol === 'ADMIN' && (
+            {session?.user.rol === 'ADMIN' && (
                 <Link href="/reports" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/reports') ? '#0070f3' : '#666',
@@ -84,7 +79,7 @@ export function Navbar() {
                     Reportes
                 </Link>
             )}
-            {session.user.rol === 'ADMIN' && (
+            {session?.user.rol === 'ADMIN' && (
                 <Link href="/users" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/users') ? '#0070f3' : '#666',
@@ -98,6 +93,12 @@ export function Navbar() {
             )}
         </>
     );
+}
+
+export function Navbar() {
+    const { data: session } = useSession();
+    const [isOpen, setIsOpen] = useState(false);
+    if (!session) return null;
 
     return (
         <nav className="site-nav" style={{
@@ -146,7 +147,7 @@ export function Navbar() {
 
             <div className="user-section" style={{ alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <span style={{ color: '#666', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-                    {session.user.name} ({session.user.rol})
+                    {session?.user.name} ({session?.user.rol})
                 </span>
                 <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
@@ -173,7 +174,7 @@ export function Navbar() {
                 <div style={{ height: 1, background: '#efefef', margin: '0.75rem 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ color: '#666', fontSize: '0.95rem' }}>
-                        {session.user.name} ({session.user.rol})
+                        {session?.user.name} ({session?.user.rol})
                     </div>
                     <button
                         onClick={() => signOut({ callbackUrl: '/login' })}

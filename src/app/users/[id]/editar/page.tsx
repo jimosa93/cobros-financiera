@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useToast } from '@/components/Toast';
 import { Navbar } from "@/components/Navbar";
 import FormCard from '@/components/FormCard';
 import Spinner from "@/components/Spinner";
@@ -13,6 +12,7 @@ export default function EditUserPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [form, setForm] = useState<any>({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -35,7 +35,6 @@ export default function EditUserPage() {
     }).finally(() => setLoading(false));
   }, [params.id]);
 
-  const toast = useToast();
   if (status === "loading" || loading) {
     return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
       <Spinner size={40} />
@@ -43,9 +42,9 @@ export default function EditUserPage() {
   }
   if (!session || session.user.rol !== "ADMIN") { router.replace("/"); return null; }
 
-  const handleChange = (e: any) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(""); setSaving(true);
     try {
@@ -58,8 +57,8 @@ export default function EditUserPage() {
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
       try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push("/users");
-    } catch (err: any) {
-      setError(err.message || "Error");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error");
     } finally { setSaving(false); }
   };
 

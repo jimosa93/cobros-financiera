@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 // GET: List, search, paginate préstamos
 export async function GET(request: NextRequest) {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
 
     const clienteIdParam = searchParams.get('clienteId');
-    let where: any = {};
+    let where: Prisma.PrestamoWhereInput = {};
     if (clienteIdParam) {
       where = { clienteId: Number(clienteIdParam) };
     } else if (search) {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
         ],
       };
     }
-    
+
     const total = await prisma.prestamo.count({ where });
     const prestamos = await prisma.prestamo.findMany({
       where,
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.json({ prestamos, total });
   } catch (error) {
+    console.error('Error listing prestamos:', error);
     return NextResponse.json({ error: 'Error al listar préstamos' }, { status: 500 });
   }
 }
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
     const {
       clienteId, montoPrestado, tasa, cuotas, fechaInicio, notas, cobradorId
     } = body;
-    if(!clienteId || !montoPrestado || !tasa || !cuotas || !fechaInicio) {
+    if (!clienteId || !montoPrestado || !tasa || !cuotas || !fechaInicio) {
       return NextResponse.json({ error: 'Campo faltante o inválido en el formulario' }, { status: 400 });
     }
     // Encuentra el máximo orden actual de manera robusta

@@ -41,22 +41,22 @@ export function Field({ label, required, children }: { label?: string; required?
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   const { style, ...rest } = props;
-  return <input {...(rest as any)} style={{ ...baseInputStyle, ...(style as any) }} />;
+  return <input {...rest} style={{ ...baseInputStyle, ...style }} />;
 }
 
 export function ReadonlyInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   const { style, ...rest } = props;
-  return <input {...(rest as any)} readOnly style={{ ...baseInputStyle, ...(style as any) }} />;
+  return <input {...rest} readOnly style={{ ...baseInputStyle, ...style }} />;
 }
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   const { style, ...rest } = props;
-  return <select {...(rest as any)} style={{ ...baseInputStyle, ...(style as any), background: "#fff" }} />;
+  return <select {...rest} style={{ ...baseInputStyle, ...style, background: "#fff" }} />;
 }
 
 export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const { style, ...rest } = props;
-  return <textarea {...(rest as any)} style={{ ...baseInputStyle, ...(style as any), minHeight: 80 }} />;
+  return <textarea {...rest} style={{ ...baseInputStyle, ...style, minHeight: 80 }} />;
 }
 
 export { labelStyle, baseInputStyle, errorStyle };

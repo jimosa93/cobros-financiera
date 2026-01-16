@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import React from "react";
-import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
 import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
 import { useRouter } from "next/navigation";
@@ -17,22 +15,23 @@ export default function AbonosPage() {
   const canCreateAbono = isAdmin || (!!session && session.user?.rol === 'COBRADOR');
   const router = useRouter();
   const toast = useToast();
-  const [abonos, setAbonos] = useState<any[]>([]);
+  const [abonos, setAbonos] = useState<{ id: number; fecha: string; prestamo?: { cliente?: { nombreCompleto: string } }; prestamoId: number; monto: string; tipoPago: string; cobrador?: { nombreCompleto: string }; notas: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(50);
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/abonos?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`)
-      .then(r => r.json())
-      .then(data => {
-        setAbonos(data.abonos || []);
-        setTotal(data.total || 0);
-      })
-      .finally(() => setLoading(false));
+    const load = async () => {
+      setLoading(true);
+      const res = await fetch(`/api/abonos?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setAbonos(data.abonos || []);
+      setTotal(data.total || 0);
+      setLoading(false);
+    };
+    load();
   }, [page, pageSize, query]);
 
   async function eliminar(id: number) {
@@ -46,9 +45,6 @@ export default function AbonosPage() {
     setAbonos(prev => prev.filter(a => a.id !== id));
     try { toast.addToast({ message: 'Abono eliminado', type: 'success' }); } catch (e) { }
   }
-
-  const headerStyle = { textAlign: 'left' as const, fontWeight: 600, color: '#232323', fontSize: 16, background: '#f9fafe', padding: '13px 8px' };
-  const cellStyle = { color: '#232323', fontSize: 15, background: '#fff', padding: '12px 8px', borderBottom: '1px solid #ecedef', fontWeight: 400 };
 
   return (
     <div className="app-bg">

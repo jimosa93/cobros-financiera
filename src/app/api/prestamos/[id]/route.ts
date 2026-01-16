@@ -19,6 +19,7 @@ export async function GET(
     }
     return NextResponse.json({ prestamo });
   } catch (error) {
+    console.error('Error fetching prestamo:', error);
     return NextResponse.json({ error: 'Error al obtener préstamo' }, { status: 500 });
   }
 }
@@ -51,6 +52,7 @@ export async function PUT(
     });
     return NextResponse.json({ prestamo });
   } catch (error) {
+    console.error('Error updating prestamo:', error);
     return NextResponse.json({ error: 'Error al actualizar préstamo' }, { status: 500 });
   }
 }
@@ -71,6 +73,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Préstamo eliminado' });
   } catch (error) {
     // Captura el mensaje real
+    console.error('Error deleting prestamo:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }
@@ -99,6 +102,7 @@ export async function PATCH(
     await prisma.prestamo.update({ where: { id: prestamoSwap.id }, data: { orden: prestamoToMove.orden } });
     return NextResponse.json({ message: 'Orden cambiado' });
   } catch (error) {
+    console.error('Error changing order:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

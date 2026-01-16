@@ -169,11 +169,13 @@ export default function NuevoAbonoPage() {
           const sd = await sres.json();
           const sum = sd.sumMonto ? parseFloat(sd.sumMonto) : 0;
           setLastAbonoSum(sum);
-        } catch {
+        } catch (error) {
+          console.error('Error fetching abono sum:', error);
           setLastAbonoSum(0);
         }
       }
-    } catch {
+    } catch (error) {
+      console.error('Error creating abono:', error);
       alert("Error");
     } finally { setGuardando(false); }
   };

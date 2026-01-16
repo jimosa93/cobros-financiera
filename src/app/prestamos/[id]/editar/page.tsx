@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useToast } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
 import Spinner from '@/components/Spinner';
+import { Prestamo } from '@prisma/client';
 
 interface Cliente { id: number; nombreCompleto: string; }
 const INTERESES = [0.1, 0.2, 0.3];
@@ -16,7 +16,7 @@ export default function EditarPrestamoPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [prestamo, setPrestamo] = useState<any>(null);
+  const [prestamo, setPrestamo] = useState<Prestamo | undefined>(undefined);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,7 +49,6 @@ export default function EditarPrestamoPage() {
     fetchData();
   }, [params.id]);
 
-  const toast = useToast();
   if (status === "loading" || loading) {
     return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
       <Spinner size={40} />
@@ -68,24 +67,6 @@ export default function EditarPrestamoPage() {
   const cuotasN = parseInt(cuotas, 10);
   const totalAPagar = !isNaN(montoN) && !isNaN(Number(tasa)) ? montoN * (1 + Number(tasa)) : 0;
   const valorCuota = totalAPagar && cuotasN > 0 ? totalAPagar / cuotasN : 0;
-
-  const inputStyle = {
-    width: '100%',
-    padding: '0.75rem',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    background: '#fff',
-    color: '#232323',
-    fontSize: '1rem',
-    fontWeight: 400
-  } as const;
-  const labelStyle = {
-    fontWeight: 500,
-    display: 'block',
-    marginBottom: 7,
-    color: '#222',
-    fontSize: 16
-  } as const;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(''); setSuccessMsg(''); setGuardando(true);
@@ -107,8 +88,9 @@ export default function EditarPrestamoPage() {
       if (!res.ok) throw new Error(data.error || "Error inesperado");
       try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push('/prestamos');
-    } catch (err: any) {
-      setError(err.message || "Error inesperado");
+    } catch (err: unknown) {
+      console.error('Error updating prestamo:', err);
+      setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
       setGuardando(false);
     }
@@ -120,7 +102,7 @@ export default function EditarPrestamoPage() {
       <FormCard title="Editar Préstamo" maxWidth="520px" titleCentered={true}>
         <form onSubmit={handleSubmit}>
           <Field label="Fecha">
-            <ReadonlyInput value={prestamo.fechaInicio?.substr(0, 10)} />
+            <ReadonlyInput value={prestamo.fechaInicio?.toISOString().substring(0, 10)} />
           </Field>
           <Field label="Cliente *">
             <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required>

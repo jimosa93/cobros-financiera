@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,7 +8,7 @@ export async function POST(request: NextRequest) {
     const { id, fecha, tipo, monto, nota } = body;
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
     const pid = parseInt(String(id), 10);
-    const prismaAny = prisma as any;
+    const prismaAny = prisma as PrismaClient;
     let updated;
     if (prismaAny.caja && typeof prismaAny.caja.update === 'function') {
       updated = await prisma.caja.update({
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Use parameterized query to avoid SQL syntax issues and injection
-      const rows = await (prisma as any).$queryRaw`
+      const rows = await (prisma as PrismaClient).$queryRaw`
         UPDATE "Caja"
         SET
           "fecha" = ${fecha ? new Date(fecha) : null}::timestamp,

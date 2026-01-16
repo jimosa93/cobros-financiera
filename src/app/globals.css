@@ -263,6 +263,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .card.kpi {
   min-width: 150px;
 }
+.card.report-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
 .card .muted {
   font-size: 12px;
   color: #666;
@@ -362,4 +367,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .row-highlight .table-cell {
   background: #a9fbd5;
+}
+
+@media (max-width: 475px) {
+  .card.report-cards {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .card.kpi .value {
+    font-size: 1rem;
+  }
+  .card.kpi .muted {
+    font-size: 0.85rem;
+  }
+}
+
+/* very small phones */
+@media (max-width: 380px) {
+  .card.report-cards {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+  }
+  .card.kpi .value {
+    font-size: 0.95rem;
+  }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { cardStyle, headerTitle } from '@/styles/ui';
@@ -24,6 +24,11 @@ interface Prestamo {
     notas?: string;
 }
 
+interface PrestamoList {
+    prestamos: Prestamo[];
+    cliente?: Cliente;
+    clienteId?: number;
+}
 interface Abono {
     id: number;
     fecha: string;
@@ -46,14 +51,59 @@ export default function TarjetaVirtualPage() {
     const [abonos, setAbonos] = useState<Abono[]>([]);
     const [loading, setLoading] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+    // helper: count business days excluding Sundays between two dates inclusive
+    function businessDaysExcludingSundaysInclusive(start: Date, end: Date): number {
+        if (!start || !end) return 0;
+        const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        if (e < s) return 0;
+        let count = 0;
+        for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+            if (d.getDay() !== 0) count++;
+        }
+        return count;
+    }
+    // compute final date by adding `cuotas` calendar days skipping Sundays.
+    // The start date does NOT count (i.e. cuotas=1 -> next working day after start, skipping Sundays).
+    function addDaysSkippingSundaysExcludingStart(startIso?: string, cuotas?: number): Date | null {
+        if (!startIso) return null;
+        const d = new Date(startIso);
+        if (isNaN(d.getTime())) return null;
+        const daysToAdd = Math.max(0, Number(cuotas) || 0);
+        let added = 0;
+        while (added < daysToAdd) {
+            d.setDate(d.getDate() + 1);
+            if (d.getDay() !== 0) { // not Sunday
+                added++;
+            }
+        }
+        return d;
+    }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
-        // load clients for dropdown
+        // load only clients that have at least one prestamo (active or inactive)
         (async () => {
             try {
-                const res = await fetch('/api/clientes?pageSize=1000');
-                const data = await res.json();
-                setClientes(data.clientes || []);
+                const r = await fetch('/api/prestamos?pageSize=1000');
+                const d = await r.json();
+                const prestamosList: PrestamoList[] = d.prestamos || [];
+                const map = new Map<string, { id: number; nombreCompleto: string }>();
+                prestamosList.forEach(p => {
+                    if (p.cliente && p.cliente.id) {
+                        const idStr = String(p.cliente.id);
+                        if (!map.has(idStr)) {
+                            map.set(idStr, { id: p.cliente.id, nombreCompleto: p.cliente.nombreCompleto });
+                        }
+                    } else if (p.clienteId) {
+                        const idStr = String(p.clienteId);
+                        if (!map.has(idStr)) {
+                            // placeholder name until we fetch cliente detail later if needed
+                            map.set(idStr, { id: Number(p.clienteId), nombreCompleto: `#${p.clienteId}` });
+                        }
+                    }
+                });
+                setClientes(Array.from(map.values()));
             } catch {
                 setClientes([]);
             }
@@ -80,15 +130,15 @@ export default function TarjetaVirtualPage() {
                 const r = await fetch(`/api/prestamos?clienteId=${clienteId}&pageSize=1000`);
                 const d = await r.json();
                 setPrestamos(d.prestamos || []);
-                // if prestamoId is not set, pick first
-                if (!prestamoId && d.prestamos?.length) {
+                // if prestamoId is not set and wasn't provided via URL query, pick first
+                if (!prestamoId && !prestamoFromQueryRef.current && d.prestamos?.length) {
                     setPrestamoId(String(d.prestamos[0].id));
                 }
             } catch {
                 setPrestamos([]);
             }
         })();
-    }, [clienteId, prestamoId]);
+    }, [clienteId]);
 
     useEffect(() => {
         // when prestamoId changes, fetch prestamo details and abonos
@@ -164,13 +214,14 @@ export default function TarjetaVirtualPage() {
     };
 
     // read initial query params client-side (avoid useSearchParams to prevent prerender error)
+    const prestamoFromQueryRef = useRef(false);
     useEffect(() => {
         if (typeof window === 'undefined') return;
         const params = new URLSearchParams(window.location.search);
         const c = params.get('clienteId') || '';
         const p = params.get('prestamoId') || '';
         if (c) setClienteId(c);
-        if (p) setPrestamoId(p);
+        if (p) { setPrestamoId(p); prestamoFromQueryRef.current = true; }
     }, []);
 
     return (
@@ -229,8 +280,29 @@ export default function TarjetaVirtualPage() {
                                     }
                                 </div>
 
+                                <div style={{ color: '#222', fontWeight: 600 }}>Fecha Inicial:</div>
+                                <div style={{ color: '#222' }}>{prestamo?.fechaInicio ? new Date(prestamo.fechaInicio).toLocaleDateString('es-ES') : '-'}</div>
+
+                                <div style={{ color: '#222', fontWeight: 600 }}>Fecha Final:</div>
+                                <div style={{ color: '#222' }}>{prestamo?.fechaInicio ? (addDaysSkippingSundaysExcludingStart(prestamo.fechaInicio, prestamo.cuotas) ? addDaysSkippingSundaysExcludingStart(prestamo.fechaInicio, prestamo.cuotas)!.toLocaleDateString('es-ES') : '-') : '-'}</div>
+
                                 <div style={{ color: '#222', fontWeight: 600 }}>Atrasadas:</div>
-                                <div style={{ color: '#222' }}>-</div>
+                                <div style={{ color: '#222' }}>
+                                    {(() => {
+                                        if (!prestamo?.montoPrestado || prestamo?.tasa === undefined || !prestamo?.cuotas || !prestamo?.fechaInicio) return '-';
+                                        const montoNum = Number(prestamo.montoPrestado);
+                                        const tasaNum = Number(prestamo.tasa || 0);
+                                        const totalPagar = montoNum * (1 + tasaNum);
+                                        const valorCuota = prestamo.cuotas ? totalPagar / prestamo.cuotas : 0;
+                                        const abonoTotal = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
+                                        const actualInstallments = valorCuota > 0 ? Math.floor(abonoTotal / valorCuota) : 0;
+                                        const startDate = new Date(prestamo.fechaInicio);
+                                        const todayLocal = new Date();
+                                        const businessDays = businessDaysExcludingSundaysInclusive(startDate, new Date(todayLocal.getFullYear(), todayLocal.getMonth(), todayLocal.getDate()));
+                                        const atrasadas = Math.max(0, businessDays - 1 - actualInstallments);
+                                        return atrasadas;
+                                    })()}
+                                </div>
 
                                 <div style={{ color: '#222', fontWeight: 600 }}>Cuota Actual:</div>
                                 <div style={{ color: '#222' }}>

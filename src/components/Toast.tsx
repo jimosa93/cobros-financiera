@@ -30,11 +30,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       const queued = sessionStorage.getItem('globalToast');
       if (queued) {
         const parsed = JSON.parse(queued);
-        if (parsed?.message) addToast(parsed);
+        if (parsed?.message) {
+          setTimeout(() => {
+            addToast(parsed);
+          }, 0);
+        }
         sessionStorage.removeItem('globalToast');
       }
     } catch (e) {
-      // ignore
+      console.error(e);
     }
   }, [addToast]);
 
@@ -45,11 +49,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         const queued = sessionStorage.getItem('globalToast');
         if (queued) {
           const parsed = JSON.parse(queued);
-          if (parsed?.message) addToast(parsed);
+          if (parsed?.message) {
+            addToast(parsed);
+          }
           sessionStorage.removeItem('globalToast');
         }
       } catch (e) {
-        // ignore
+        console.error(e);
       }
     };
 
