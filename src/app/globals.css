@@ -261,7 +261,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 .card.kpi {
-  min-width: 180px;
+  min-width: 150px;
 }
 .card .muted {
   font-size: 12px;

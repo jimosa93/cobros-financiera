@@ -42,10 +42,40 @@ export default function NuevoAbonoPage() {
   const [tipo, setTipo] = useState(TIPOS[0]);
   const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [success, setSuccess] = useState("");
+  const [success] = useState("");
   const now = new Date();
   const fecha = now.toLocaleDateString('es-ES'); // display dd/mm/yyyy
   const fechaISOFull = now.toISOString(); // full ISO with time for storage
+
+  // Count business days excluding Sundays between two dates (inclusive).
+  function businessDaysExcludingSundaysInclusive(start: Date, end: Date): number {
+    if (!start || !end) return 0;
+    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    if (e < s) return 0;
+    let count = 0;
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() !== 0) count++;
+    }
+    return count;
+  }
+
+  // compute final date by adding `cuotas` calendar days skipping Sundays.
+  // The start date does NOT count (i.e. cuotas=1 -> next working day after start, skipping Sundays).
+  function addDaysSkippingSundaysExcludingStart(startIso?: string, cuotas?: number): Date | null {
+    if (!startIso) return null;
+    const d = new Date(startIso);
+    if (isNaN(d.getTime())) return null;
+    const daysToAdd = Math.max(0, Number(cuotas) || 0);
+    let added = 0;
+    while (added < daysToAdd) {
+      d.setDate(d.getDate() + 1);
+      if (d.getDay() !== 0) { // not Sunday
+        added++;
+      }
+    }
+    return d;
+  }
 
   useEffect(() => {
     // Load only clients that have at least one ACTIVO prestamo
@@ -60,7 +90,7 @@ export default function NuevoAbonoPage() {
           if (p.cliente && !map.has(p.cliente.id)) map.set(p.cliente.id, p.cliente);
         });
         setClientes(Array.from(map.values()));
-      } catch (e) {
+      } catch {
         setClientes([]);
       }
     })();
@@ -128,7 +158,7 @@ export default function NuevoAbonoPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error");
-      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono registrado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
+      try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Abono registrado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch { }
       router.push('/abonos');
       // update last abono to the one just created (data.abono)
       if (data.abono) {
@@ -139,13 +169,12 @@ export default function NuevoAbonoPage() {
           const sd = await sres.json();
           const sum = sd.sumMonto ? parseFloat(sd.sumMonto) : 0;
           setLastAbonoSum(sum);
-        } catch (err) {
+        } catch {
           setLastAbonoSum(0);
         }
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      alert(message || "Error");
+    } catch {
+      alert("Error");
     } finally { setGuardando(false); }
   };
 
@@ -200,13 +229,33 @@ export default function NuevoAbonoPage() {
               {prestamoDetails ? (
                 <div style={{ color: '#222', lineHeight: 1.6 }}>
                   <div><strong>Código crédito:</strong> <span style={{ color: '#222' }}>#{prestamoDetails.id}</span></div>
-                  <div><strong>Valor prestado:</strong> <span style={{ color: '#222' }}>{Number(prestamoDetails.montoPrestado ?? '0').toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
-                  <div><strong>Total crédito:</strong> <span style={{ color: '#222' }}>{(Number(prestamoDetails.montoPrestado ?? '0') * (1 + Number(prestamoDetails.tasa ?? 0))).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
-                  <div><strong>Saldo actual:</strong> <span style={{ color: '#222' }}>{((Number(prestamoDetails.montoPrestado ?? '0') * (1 + Number(prestamoDetails.tasa ?? 0))) - Number(sumaAbonos)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
-                  <div><strong>Cuota actual:</strong> <span style={{ color: '#222' }}>{(((Number(prestamoDetails.montoPrestado ?? '0') * (1 + Number(prestamoDetails.tasa ?? 0))) - Number(sumaAbonos)) / (prestamoDetails.cuotas ?? 1)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span></div>
-                  <div><strong>Cuotas atrasadas:</strong> <span style={{ color: '#666' }}>-</span></div>
-                  <div><strong>Valor cuota:</strong> <span style={{ color: '#222' }}>{((Number(prestamoDetails.montoPrestado ?? '0') * (1 + Number(prestamoDetails.tasa ?? 0))) / (prestamoDetails.cuotas ?? 1)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
-                  <div><strong>Saldo atrasado:</strong> <span style={{ color: '#666' }}>-</span></div>
+                  <div><strong>Valor prestado:</strong> <span style={{ color: '#222' }}>{Number(prestamoDetails.montoPrestado ?? '0').toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                  <div><strong>Total crédito:</strong> <span style={{ color: '#222' }}>{(Number(prestamoDetails.montoPrestado ?? '0') * (1 + Number(prestamoDetails.tasa ?? 0))).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                  <div><strong>Fecha Inicial:</strong> <span style={{ color: '#222' }}>{prestamoDetails.fechaInicio ? new Date(prestamoDetails.fechaInicio).toLocaleDateString('es-ES') : '-'}</span></div>
+                  <div><strong>Fecha Final:</strong> <span style={{ color: '#222' }}>{prestamoDetails.fechaInicio ? (addDaysSkippingSundaysExcludingStart(prestamoDetails.fechaInicio, prestamoDetails.cuotas) ? addDaysSkippingSundaysExcludingStart(prestamoDetails.fechaInicio, prestamoDetails.cuotas)!.toLocaleDateString('es-ES') : '-') : '-'}</span></div>
+                  <div><strong>Abono total:</strong> <span style={{ color: '#222' }}>{Number(sumaAbonos || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                  <div><strong>Saldo actual:</strong> <span style={{ color: '#222' }}>{((Number(prestamoDetails.montoPrestado ?? '0') * (1 + Number(prestamoDetails.tasa ?? 0))) - Number(sumaAbonos)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                  <div><strong>Cuota actual:</strong> <span style={{ color: '#222' }}>{(((Number(prestamoDetails.montoPrestado ?? '0') * (1 + Number(prestamoDetails.tasa ?? 0))) - Number(sumaAbonos)) / (prestamoDetails.cuotas ?? 1)).toLocaleString('es-CO', { maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                  {(() => {
+                    const montoNum = Number(prestamoDetails.montoPrestado ?? '0');
+                    const tasaNum = Number(prestamoDetails.tasa ?? 0);
+                    const cuotasNum = Number(prestamoDetails.cuotas ?? 1);
+                    const totalPagar = montoNum * (1 + tasaNum);
+                    const valorCuota = cuotasNum > 0 ? totalPagar / cuotasNum : 0;
+                    const actualInstallments = valorCuota > 0 ? Math.floor(Number(sumaAbonos) / valorCuota) : 0;
+                    const startDate = prestamoDetails.fechaInicio ? new Date(prestamoDetails.fechaInicio) : null;
+                    const todayLocal = new Date();
+                    const businessDays = startDate ? businessDaysExcludingSundaysInclusive(startDate, new Date(todayLocal.getFullYear(), todayLocal.getMonth(), todayLocal.getDate())) : 0;
+                    const atrasadas = Math.max(0, businessDays - 1 - actualInstallments);
+                    const saldoAtrasado = atrasadas * valorCuota;
+                    return (
+                      <>
+                        <div><strong>Cuotas atrasadas:</strong> <span style={{ color: '#222' }}>{atrasadas}</span></div>
+                        <div><strong>Valor cuota:</strong> <span style={{ color: '#222' }}>{valorCuota.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                        <div><strong>Saldo atrasado:</strong> <span style={{ color: '#666' }}>{saldoAtrasado > 0 ? saldoAtrasado.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-'}</span></div>
+                      </>
+                    );
+                  })()}
                   <div><strong>Notas:</strong> <span style={{ color: '#222' }}>{prestamoDetails.notas ?? '-'}</span></div>
                 </div>
               ) : (
@@ -220,9 +269,9 @@ export default function NuevoAbonoPage() {
                   <div style={{ color: '#222', lineHeight: 1.6 }}>
                     <div><strong>Cliente:</strong> <span style={{ color: '#222' }}>{lastAbono.prestamo?.cliente?.nombreCompleto || prestamoDetails?.cliente?.nombreCompleto || '-'}</span></div>
                     <div><strong>Código crédito:</strong> <span style={{ color: '#222' }}>#{lastAbono.prestamoId}</span></div>
-                    <div><strong>Valor prestado:</strong> <span style={{ color: '#222' }}>{(lastAbono.prestamo?.montoPrestado ? Number(lastAbono.prestamo.montoPrestado) : (prestamoDetails ? Number(prestamoDetails.montoPrestado ?? '0') : 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
-                    <div><strong>Abono:</strong> <span style={{ color: '#222' }}>{Number(lastAbono.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
-                    <div><strong>Saldo:</strong> <span style={{ color: '#222' }}>{(((lastAbono.prestamo?.montoPrestado ? Number(lastAbono.prestamo.montoPrestado) : (prestamoDetails ? Number(prestamoDetails.montoPrestado ?? '0') : 0)) * (1 + (lastAbono.prestamo?.tasa ? Number(lastAbono.prestamo.tasa) : (prestamoDetails ? Number(prestamoDetails.tasa ?? 0) : 0)))) - Number(lastAbonoSum || sumaAbonos)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span></div>
+                    <div><strong>Valor prestado:</strong> <span style={{ color: '#222' }}>{(lastAbono.prestamo?.montoPrestado ? Number(lastAbono.prestamo.montoPrestado) : (prestamoDetails ? Number(prestamoDetails.montoPrestado ?? '0') : 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                    <div><strong>Abono:</strong> <span style={{ color: '#222' }}>{Number(lastAbono.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
+                    <div><strong>Saldo:</strong> <span style={{ color: '#222' }}>{(((lastAbono.prestamo?.montoPrestado ? Number(lastAbono.prestamo.montoPrestado) : (prestamoDetails ? Number(prestamoDetails.montoPrestado ?? '0') : 0)) * (1 + (lastAbono.prestamo?.tasa ? Number(lastAbono.prestamo.tasa) : (prestamoDetails ? Number(prestamoDetails.tasa ?? 0) : 0)))) - Number(lastAbonoSum || sumaAbonos)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</span></div>
                     <div><strong>Fecha:</strong> <span style={{ color: '#222' }}>{lastAbono.fecha ? new Date(lastAbono.fecha).toLocaleDateString("es-CO") : '-'}</span></div>
                   </div>
                 ) : (

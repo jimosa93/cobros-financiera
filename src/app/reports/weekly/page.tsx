@@ -238,7 +238,7 @@ export default function ReportsWeeklyPage() {
                 <th className="table-header">Fecha</th>
                 <th className="table-header">Cliente</th>
                 <th className="table-header">Id préstamo</th>
-                <th className="table-header" style={{ textAlign: 'right' }}>Monto</th>
+                <th className="table-header">Monto</th>
                 <th className="table-header">Tipo de pago</th>
                 <th className="table-header">Cobrador</th>
               </tr>
@@ -250,7 +250,7 @@ export default function ReportsWeeklyPage() {
                   <td className="table-cell">{new Date(c.fecha).toLocaleDateString("es-ES")}</td>
                   <td className="table-cell">{c.prestamo?.cliente?.nombreCompleto || '-'}</td>
                   <td className="table-cell">#{c.prestamoId}</td>
-                  <td className="table-cell" style={{ textAlign: 'right' }}>{Number(c.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
+                  <td className="table-cell">{Number(c.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '')}</td>
                   <td className="table-cell">{c.tipoPago}</td>
                   <td className="table-cell">{c.cobrador?.nombreCompleto || '-'}</td>
                 </tr>

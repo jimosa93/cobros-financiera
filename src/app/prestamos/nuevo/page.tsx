@@ -25,7 +25,7 @@ export default function NuevoPrestamoPage() {
   const [clienteId, setClienteId] = useState("");
   const [monto, setMonto] = useState("");
   const [cuotas, setCuotas] = useState("");
-  const [tasa, setTasa] = useState(INTERESES[0]);
+  const [tasa, setTasa] = useState(INTERESES[1]);
   const now = new Date();
   const [fechaDisplay] = useState(() => now.toLocaleDateString('es-ES'));
   const [fechaISOFull] = useState(() => now.toISOString());
@@ -145,9 +145,9 @@ export default function NuevoPrestamoPage() {
               />
             </Field>
             <Field label="Intereses *">
-              <Select value={tasa} onChange={e => setTasa(Number(e.target.value))}>
+              <Select value={String(tasa)} onChange={e => setTasa(Number(e.target.value))}>
                 {INTERESES.map(i => (
-                  <option key={i} value={i}>{Math.round(i * 100)}%</option>
+                  <option key={i} value={String(i)}>{Math.round(i * 100)}%</option>
                 ))}
               </Select>
             </Field>

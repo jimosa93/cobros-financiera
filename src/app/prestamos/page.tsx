@@ -25,6 +25,37 @@ interface Prestamo {
   fechaInicio?: string;
 }
 
+// Helper: compute final date by adding `cuotas` calendar days skipping Sundays.
+// The start date does NOT count (i.e. cuotas=1 -> next working day after start, skipping Sundays).
+function addDaysSkippingSundaysExcludingStart(startIso?: string, cuotas?: number): Date | null {
+  if (!startIso) return null;
+  const d = new Date(startIso);
+  if (isNaN(d.getTime())) return null;
+  const daysToAdd = Math.max(0, Number(cuotas) || 0);
+  let added = 0;
+  // advance day-by-day until we've added 'daysToAdd' non-Sunday days
+  while (added < daysToAdd) {
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() !== 0) { // not Sunday
+      added++;
+    }
+  }
+  return d;
+}
+
+// Count business days excluding Sundays between two dates (inclusive).
+function businessDaysExcludingSundaysInclusive(start: Date, end: Date): number {
+  if (!start || !end) return 0;
+  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  if (e < s) return 0;
+  let count = 0;
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() !== 0) count++;
+  }
+  return count;
+}
+
 function RowSortable({ p, idx, children, rowClassName }: { p: Prestamo, idx: number; children: React.ReactNode; rowClassName?: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
   const style = {
@@ -70,7 +101,7 @@ export default function PrestamosPage() {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(30);
   const [moving, setMoving] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -191,17 +222,29 @@ export default function PrestamosPage() {
                         <th className="table-header">Abono T</th>
                         <th className="table-header">Saldo</th>
                         <th className="table-header">Fecha I</th>
+                        <th className="table-header">Fecha F</th>
                         <th className="table-header">Actual</th>
+                        <th className="table-header">Atrasadas</th>
                         <th className="table-header">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {prestamos.length === 0 && (
-                        <tr><td colSpan={9} className="table-cell" style={{ textAlign: 'center', padding: '2rem 0', color: '#888' }}>No hay préstamos</td></tr>
+                        <tr><td colSpan={15} className="table-cell" style={{ textAlign: 'center', padding: '2rem 0', color: '#888' }}>No hay préstamos</td></tr>
                       )}
                       {prestamos.map((p, idx) => {
                         const { valorCuota, totalPagar } = calculate(p.montoPrestado, p.tasa, p.cuotas);
                         const highlightClass = abonosToday.has(p.id) ? 'row-highlight' : undefined;
+                        // compute current paid installments
+                        const actualInstallments = valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0;
+                        // compute business days (excluding Sundays) between start and today, inclusive
+                        const startDateObj = p.fechaInicio ? new Date(p.fechaInicio) : null;
+                        const todayLocal = new Date();
+                        const startMid = startDateObj ? new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate()) : null;
+                        const businessDays = startMid ? businessDaysExcludingSundaysInclusive(startMid, new Date(todayLocal.getFullYear(), todayLocal.getMonth(), todayLocal.getDate())) : 0;
+                        // replicate Excel formula: NETWORKDAYS.INTL(start, TODAY(), 11) - 1 - currentInstallment
+                        const atrasadas = Math.max(0, businessDays - 1 - actualInstallments);
+
                         return (
                           <RowSortable p={p} idx={idx} key={p.id} rowClassName={highlightClass}>
                             <td className="table-cell" style={{ cursor: 'grab', fontWeight: 500 }}>::</td>
@@ -215,7 +258,9 @@ export default function PrestamosPage() {
                             <td className="table-cell">{(abonoSums[p.id] || 0) > 0 ? (abonoSums[p.id] || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-'}</td>
                             <td className="table-cell">{(totalPagar - (abonoSums[p.id] || 0)) >= 0 ? (totalPagar - (abonoSums[p.id] || 0)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).replace(/\s/g, '') : '-'}</td>
                             <td className="table-cell">{p.fechaInicio ? new Date(p.fechaInicio).toLocaleDateString('es-ES') : '-'}</td>
+                            <td className="table-cell">{p.fechaInicio ? (addDaysSkippingSundaysExcludingStart(p.fechaInicio, p.cuotas) ? addDaysSkippingSundaysExcludingStart(p.fechaInicio, p.cuotas)!.toLocaleDateString('es-ES') : '-') : '-'}</td>
                             <td className="table-cell">{valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0}</td>
+                            <td className="table-cell">{atrasadas > 0 ? atrasadas : 0}</td>
                             {isAdmin ? (
                               <td className="table-cell" style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
                                 <button aria-label="Editar" title="Editar" onClick={() => window.location.href = `/prestamos/${p.id}/editar`} style={{ padding: 8, border: '1px solid #bbb', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
