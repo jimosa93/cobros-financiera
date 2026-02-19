@@ -21,6 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         placaMoto: true,
         fechaTecnico: true,
         fechaSoat: true,
+        rutaId: true,
       },
     });
     if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
@@ -38,7 +39,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const idNum = parseInt(id, 10);
     const body = await request.json();
-    const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat } = body;
+    const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat, rutaId } = body;
     const data: Prisma.UsuarioUpdateInput = {
       nombreCompleto,
       celular,
@@ -49,8 +50,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       fechaTecnico: fechaTecnico ? new Date(fechaTecnico) : null,
       fechaSoat: fechaSoat ? new Date(fechaSoat) : null,
     };
+    if (rol === 'COBRADOR' && rutaId) {
+      data.ruta = { connect: { id: parseInt(rutaId) } };
+    } else if (rol === 'ADMIN') {
+      data.ruta = { disconnect: true };
+    }
     if (password) data.password = await hash(password, 12);
     const updated = await prisma.usuario.update({ where: { id: idNum }, data });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = updated;
     return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {

@@ -17,11 +17,21 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
+    const rutaIdParam = searchParams.get('rutaId');
 
     const skip = (page - 1) * limit;
 
+    const baseWhere: any = {};
+    
+    if (user.rol === 'COBRADOR' && user.rutaId) {
+      baseWhere.rutaId = user.rutaId;
+    } else if (user.rol === 'ADMIN' && rutaIdParam) {
+      baseWhere.rutaId = parseInt(rutaIdParam);
+    }
+
     const where = search
       ? {
+          ...baseWhere,
           OR: [
             { nombreCompleto: { contains: search, mode: 'insensitive' as const } },
             { celular: { contains: search, mode: 'insensitive' as const } },
@@ -29,7 +39,7 @@ export async function GET(request: NextRequest) {
             { direccionVivienda: { contains: search, mode: 'insensitive' as const } },
           ],
         }
-      : {};
+      : baseWhere;
 
     const [clientes, total] = await Promise.all([
       prisma.cliente.findMany({
@@ -78,11 +88,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nombreCompleto, celular, direccionNegocio, direccionVivienda } = body;
+    const { nombreCompleto, celular, direccionNegocio, direccionVivienda, rutaId } = body;
 
     if (!nombreCompleto || !celular) {
       return NextResponse.json(
         { error: 'Nombre completo y celular son requeridos' },
+        { status: 400 }
+      );
+    }
+
+    if (!rutaId) {
+      return NextResponse.json(
+        { error: 'La ruta es requerida' },
         { status: 400 }
       );
     }
@@ -94,6 +111,7 @@ export async function POST(request: NextRequest) {
         direccionNegocio: direccionNegocio || null,
         direccionVivienda: direccionVivienda || null,
         fechaCreacion: new Date(),
+        rutaId: parseInt(rutaId),
       },
     });
 

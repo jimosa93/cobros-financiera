@@ -10,6 +10,13 @@ interface ClienteFormData {
     celular: string;
     direccionNegocio: string;
     direccionVivienda: string;
+    rutaId: string;
+}
+
+interface Ruta {
+    id: number;
+    nombre: string;
+    activo: boolean;
 }
 
 interface ClienteFormProps {
@@ -25,16 +32,35 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
         celular: initialData?.celular || '',
         direccionNegocio: initialData?.direccionNegocio || '',
         direccionVivienda: initialData?.direccionVivienda || '',
+        rutaId: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [loadingInitial, setLoadingInitial] = useState(!!clienteId);
+    const [rutas, setRutas] = useState<Ruta[]>([]);
+    const [loadingRutas, setLoadingRutas] = useState(true);
 
     useEffect(() => {
+        fetchRutas();
         if (clienteId) {
             fetchCliente();
         }
     }, [clienteId]);
+
+    const fetchRutas = async () => {
+        try {
+            setLoadingRutas(true);
+            const response = await fetch('/api/rutas');
+            const data = await response.json();
+            if (response.ok) {
+                setRutas(data.rutas);
+            }
+        } catch (err) {
+            console.error('Error al cargar rutas:', err);
+        } finally {
+            setLoadingRutas(false);
+        }
+    };
 
     const fetchCliente = async () => {
         try {
@@ -50,6 +76,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                 celular: data.cliente.celular,
                 direccionNegocio: data.cliente.direccionNegocio || '',
                 direccionVivienda: data.cliente.direccionVivienda || '',
+                rutaId: data.cliente.rutaId?.toString() || '',
             });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Error al cargar cliente');
@@ -58,7 +85,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
@@ -84,6 +111,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                     celular: formData.celular,
                     direccionNegocio: formData.direccionNegocio || null,
                     direccionVivienda: formData.direccionVivienda || null,
+                    rutaId: formData.rutaId,
                 }),
             });
 
@@ -93,6 +121,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                 throw new Error(data.error || `Error al ${clienteId ? 'actualizar' : 'crear'} cliente`);
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             try { toast.addToast({ message: clienteId ? 'Cliente actualizado' : 'Cliente creado', type: 'success' }); } catch (e) { }
             router.push('/clientes');
             router.refresh();
@@ -133,6 +162,36 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
 
                 <Field label="Dirección Vivienda">
                     <Input id="direccionVivienda" name="direccionVivienda" type="text" value={formData.direccionVivienda} onChange={handleChange} placeholder="Ej: Cra 10 # 20-30" />
+                </Field>
+
+                <Field label="Ruta *">
+                    {loadingRutas ? (
+                        <div style={{ padding: '0.5rem', color: '#666' }}>Cargando rutas...</div>
+                    ) : (
+                        <select
+                            id="rutaId"
+                            name="rutaId"
+                            value={formData.rutaId}
+                            onChange={handleChange}
+                            required
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                fontSize: '1rem',
+                                backgroundColor: 'white',
+                                color: '#232323',
+                            }}
+                        >
+                            <option value="">Selecciona una ruta</option>
+                            {rutas.map((ruta) => (
+                                <option key={ruta.id} value={ruta.id}>
+                                    {ruta.nombre} {!ruta.activo && '(Inactiva)'}
+                                </option>
+                            ))}
+                        </select>
+                    )}
                 </Field>
 
                 {error && (

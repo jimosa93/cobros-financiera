@@ -12,7 +12,7 @@ function startEndOfDayUTC(dateStr?: string) {
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.rol !== 'ADMIN') {
+    if (!user) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -20,6 +20,14 @@ export async function GET(request: NextRequest) {
     const startParam = searchParams.get('start') || null;
     const endParam = searchParams.get('end') || null;
     const dateParam = searchParams.get('date') || undefined;
+    const rutaIdParam = searchParams.get('rutaId');
+
+    let rutaId: number | null = null;
+    if (user.rol === 'COBRADOR' && user.rutaId) {
+      rutaId = user.rutaId;
+    } else if (user.rol === 'ADMIN' && rutaIdParam) {
+      rutaId = parseInt(rutaIdParam);
+    }
 
     let start: Date;
     let end: Date;
@@ -32,17 +40,21 @@ export async function GET(request: NextRequest) {
       end = se.end;
     }
 
-    // total abonos (sum and count)
     const totalAbonos = await prisma.abono.aggregate({
-      where: { fecha: { gte: start, lt: end } },
+      where: { 
+        fecha: { gte: start, lt: end },
+        ...(rutaId ? { prestamo: { rutaId } } : {})
+      },
       _sum: { monto: true },
       _count: { id: true },
     });
 
-    // abonos grouped by cobradorId
     const byCobrador = await prisma.abono.groupBy({
       by: ['cobradorId'],
-      where: { fecha: { gte: start, lt: end } },
+      where: { 
+        fecha: { gte: start, lt: end },
+        ...(rutaId ? { prestamo: { rutaId } } : {})
+      },
       _sum: { monto: true },
       _count: { id: true },
     });
@@ -61,19 +73,23 @@ export async function GET(request: NextRequest) {
       count: b._count.id ?? 0,
     }));
 
-    // prestamos creados in the day (count + sum of montoPrestado)
     const prestamosAgg = await prisma.prestamo.aggregate({
-      where: { fechaInicio: { gte: start, lt: end } },
+      where: { 
+        fechaInicio: { gte: start, lt: end },
+        ...(rutaId ? { rutaId } : {})
+      },
       _count: { id: true },
       _sum: { montoPrestado: true },
     });
     const prestamosCount = prestamosAgg._count.id ?? 0;
     const prestamosSum = prestamosAgg._sum.montoPrestado ? String(prestamosAgg._sum.montoPrestado) : "0";
 
-    // caja movements grouped by tipo
     const cajaByTipo = await prisma.caja.groupBy({
       by: ['tipo'],
-      where: { fecha: { gte: start, lt: end } },
+      where: { 
+        fecha: { gte: start, lt: end },
+        ...(rutaId ? { rutaId } : {})
+      },
       _sum: { monto: true },
       _count: { id: true },
     });

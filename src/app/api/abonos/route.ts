@@ -6,12 +6,17 @@ import { getCurrentUser } from '@/lib/auth';
 // GET: list abonos with pagination/search
 export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
     const search = searchParams.get('search') || '';
     const prestamoId = searchParams.get('prestamoId');
-    // support either fecha_from/fecha_to (date-only or ISO) or start/end ISO
+    const rutaIdParam = searchParams.get('rutaId');
     let fechaFrom = searchParams.get('fecha_from') || searchParams.get('fechaFrom') || null;
     let fechaTo = searchParams.get('fecha_to') || searchParams.get('fechaTo') || null;
     const startParam = searchParams.get('start') || null;
@@ -23,13 +28,17 @@ export async function GET(request: NextRequest) {
     const tipoPagos = searchParams.getAll('tipoPago') || [];
 
     let where: Prisma.AbonoWhereInput = {};
-    // base filters: prestamoId or search in notas
+    
+    if (user.rol === 'COBRADOR' && user.rutaId) {
+      where.prestamo = { rutaId: user.rutaId };
+    } else if (user.rol === 'ADMIN' && rutaIdParam) {
+      where.prestamo = { rutaId: parseInt(rutaIdParam) };
+    }
+
     if (prestamoId) {
-      where = { prestamoId: Number(prestamoId) };
+      where.prestamoId = Number(prestamoId);
     } else if (search) {
-      where = {
-        OR: [{ notas: { contains: search, mode: 'insensitive' } }],
-      };
+      where.OR = [{ notas: { contains: search, mode: 'insensitive' } }];
     }
 
     // date range filter

@@ -62,6 +62,18 @@ export default function Home() {
             descColor="#0b5257"
           />
 
+          {userRole === 'ADMIN' && (
+            <DashboardCard
+              title="Rutas"
+              description="Gestionar rutas y asignar cobradores"
+              href="/rutas"
+              color="#6366f1"
+              cardBackground="#f5f3ff"
+              titleColor="#322659"
+              descColor="#4c4180"
+            />
+          )}
+
           <DashboardCard
             title="Abonos"
             description="Registrar y consultar abonos"
@@ -82,21 +94,21 @@ export default function Home() {
             href="/prestamos"
             color="#10b981"
           />
-
-          <DashboardCard
-            title="Reportes"
-            description="Acceder a informes y reportes del sistema"
-            href="/reports"
-            color="#0ea5a0"
-          />
-
           {userRole === 'ADMIN' && (
-            <DashboardCard
-              title="Caja"
-              description="Movimientos de caja"
-              href="/caja"
-              color="#f97316"
-            />
+            <>
+              <DashboardCard
+                title="Reportes"
+                description="Acceder a informes y reportes del sistema"
+                href="/reports"
+                color="#0ea5a0"
+              />
+              <DashboardCard
+                title="Caja"
+                description="Movimientos de caja"
+                href="/caja"
+                color="#f97316"
+              />
+            </>
           )}
 
           <DashboardCard

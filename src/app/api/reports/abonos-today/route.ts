@@ -10,28 +10,32 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const startParam = searchParams.get('start') || null; // ISO datetime
-    const endParam = searchParams.get('end') || null;     // ISO datetime (exclusive)
-    const dateParam = searchParams.get('date') || undefined; // legacy: expected YYYY-MM-DD or ISO
-    const tzParam = searchParams.get('tz') || null; // legacy: timezone offset in minutes (number)
+    const startParam = searchParams.get('start') || null;
+    const endParam = searchParams.get('end') || null;
+    const dateParam = searchParams.get('date') || undefined;
+    const tzParam = searchParams.get('tz') || null;
+    const rutaIdParam = searchParams.get('rutaId');
+
+    let rutaId: number | null = null;
+    if (user.rol === 'COBRADOR' && user.rutaId) {
+      rutaId = user.rutaId;
+    } else if (user.rol === 'ADMIN' && rutaIdParam) {
+      rutaId = parseInt(rutaIdParam);
+    }
 
     let start: Date;
     let end: Date;
 
-    // Priority: if start/end ISO provided, use them directly
     if (startParam && endParam) {
       start = new Date(startParam);
       end = new Date(endParam);
     } else if (dateParam && dateParam.includes('T')) {
-      // dateParam is an ISO instant (client provided local midnight in ISO). Use directly.
       start = new Date(dateParam);
       end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
     } else {
-      // treat dateParam as YYYY-MM-DD (client local date) - legacy behavior
       const d = dateParam ? new Date(dateParam) : new Date();
       const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
       const tzOffset = tzParam ? parseInt(tzParam, 10) : new Date().getTimezoneOffset();
-      // compute UTC instant that corresponds to local midnight: Date.UTC(y,m,day) + tzOffset*60000
       const startUtcMs = Date.UTC(y, m, day) + (tzOffset * 60 * 1000);
       start = new Date(startUtcMs);
       end = new Date(startUtcMs + 24 * 60 * 60 * 1000);
@@ -39,7 +43,10 @@ export async function GET(request: NextRequest) {
 
     const byPrestamo = await prisma.abono.groupBy({
       by: ['prestamoId'],
-      where: { fecha: { gte: start, lt: end } },
+      where: { 
+        fecha: { gte: start, lt: end },
+        ...(rutaId ? { prestamo: { rutaId } } : {})
+      },
       _count: { id: true },
     });
 

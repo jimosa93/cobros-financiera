@@ -6,22 +6,33 @@ import { Prisma } from '@prisma/client';
 // GET: List, search, paginate préstamos
 export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
     const search = searchParams.get('search') || '';
+    const rutaIdParam = searchParams.get('rutaId');
 
     const clienteIdParam = searchParams.get('clienteId');
     let where: Prisma.PrestamoWhereInput = {};
+    
+    if (user.rol === 'COBRADOR' && user.rutaId) {
+      where.rutaId = user.rutaId;
+    } else if (user.rol === 'ADMIN' && rutaIdParam) {
+      where.rutaId = parseInt(rutaIdParam);
+    }
+
     if (clienteIdParam) {
-      where = { clienteId: Number(clienteIdParam) };
+      where.clienteId = Number(clienteIdParam);
     } else if (search) {
-      where = {
-        OR: [
-          { notas: { contains: search, mode: 'insensitive' } },
-          { cliente: { nombreCompleto: { contains: search, mode: 'insensitive' } } }
-        ],
-      };
+      where.OR = [
+        { notas: { contains: search, mode: 'insensitive' } },
+        { cliente: { nombreCompleto: { contains: search, mode: 'insensitive' } } }
+      ];
     }
 
     const total = await prisma.prestamo.count({ where });
@@ -48,23 +59,26 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json();
     const {
-      clienteId, montoPrestado, tasa, cuotas, fechaInicio, notas, cobradorId
+      clienteId, montoPrestado, tasa, cuotas, fechaInicio, notas, cobradorId, rutaId
     } = body;
     if (!clienteId || !montoPrestado || !tasa || !cuotas || !fechaInicio) {
       return NextResponse.json({ error: 'Campo faltante o inválido en el formulario' }, { status: 400 });
     }
-    // Encuentra el máximo orden actual de manera robusta
+    if (!rutaId) {
+      return NextResponse.json({ error: 'La ruta es requerida' }, { status: 400 });
+    }
     const ultimo = await prisma.prestamo.findFirst({ orderBy: { orden: 'desc' } });
     const orden = ultimo ? (ultimo.orden + 1) : 1;
     const prestamo = await prisma.prestamo.create({
       data: {
         clienteId: Number(clienteId),
-        montoPrestado: String(montoPrestado), // Decimal en Prisma requiere string
+        montoPrestado: String(montoPrestado),
         tasa: parseFloat(tasa),
         cuotas: Number(cuotas),
         fechaInicio: new Date(fechaInicio),
         notas: notas || null,
         cobradorId: Number(cobradorId || user.id),
+        rutaId: Number(rutaId),
         orden,
       },
     });

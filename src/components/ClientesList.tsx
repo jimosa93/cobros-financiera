@@ -101,6 +101,7 @@ export default function ClientesList() {
       toast.addToast({ message: 'Cliente eliminado', type: 'success' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al eliminar cliente');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       try { toast.addToast({ message: 'Error al eliminar cliente', type: 'error' }); } catch (e) { }
     } finally {
       setDeleting(false);

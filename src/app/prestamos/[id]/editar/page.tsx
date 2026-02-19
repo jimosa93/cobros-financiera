@@ -79,13 +79,14 @@ export default function EditarPrestamoPage() {
           montoPrestado: montoN,
           tasa: Number(tasa),
           cuotas: cuotasN,
-          fechaInicio: prestamo.fechaInicio,
+          fechaInicio: prestamo.fechaInicio ? new Date(prestamo.fechaInicio as unknown as string).toISOString() : null,
           notas: nota,
           cobradorId: prestamo.cobradorId,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error inesperado");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push('/prestamos');
     } catch (err: unknown) {
@@ -102,7 +103,13 @@ export default function EditarPrestamoPage() {
       <FormCard title="Editar Préstamo" maxWidth="520px" titleCentered={true}>
         <form onSubmit={handleSubmit}>
           <Field label="Fecha">
-            <ReadonlyInput value={prestamo.fechaInicio?.toISOString().substring(0, 10)} />
+            <ReadonlyInput
+              value={
+                prestamo.fechaInicio
+                  ? new Date(prestamo.fechaInicio as unknown as string).toISOString().substring(0, 10)
+                  : ''
+              }
+            />
           </Field>
           <Field label="Cliente *">
             <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required>

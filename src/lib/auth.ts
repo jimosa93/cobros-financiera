@@ -19,6 +19,14 @@ export async function getCurrentUser() {
       email: true,
       rol: true,
       alias: true,
+      rutaId: true,
+      ruta: {
+        select: {
+          id: true,
+          nombre: true,
+          activo: true,
+        },
+      },
     },
   });
   

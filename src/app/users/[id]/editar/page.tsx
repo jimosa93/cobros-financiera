@@ -7,6 +7,12 @@ import { Navbar } from "@/components/Navbar";
 import FormCard from '@/components/FormCard';
 import Spinner from "@/components/Spinner";
 
+interface Ruta {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
@@ -16,6 +22,13 @@ export default function EditUserPage() {
   const [form, setForm] = useState<any>({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
+
+  useEffect(() => {
+    fetch('/api/rutas').then(r => r.json()).then(data => {
+      if (data.rutas) setRutas(data.rutas);
+    });
+  }, []);
 
   useEffect(() => {
     if (!params.id) return;
@@ -30,6 +43,7 @@ export default function EditUserPage() {
           placaMoto: data.user.placaMoto || "",
           fechaTecnico: data.user.fechaTecnico ? data.user.fechaTecnico.substr(0, 10) : "",
           fechaSoat: data.user.fechaSoat ? data.user.fechaSoat.substr(0, 10) : "",
+          rutaId: data.user.rutaId?.toString() || "",
         });
       }
     }).finally(() => setLoading(false));
@@ -55,6 +69,7 @@ export default function EditUserPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario actualizado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push("/users");
     } catch (err: unknown) {
@@ -86,6 +101,19 @@ export default function EditUserPage() {
               <option value="ADMIN">Administrador</option>
             </select>
           </div>
+          {form.rol === 'COBRADOR' && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Ruta Asignada</label>
+              <select name="rutaId" value={form.rutaId || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }}>
+                <option value="">Sin ruta asignada</option>
+                {rutas.map(ruta => (
+                  <option key={ruta.id} value={ruta.id}>
+                    {ruta.nombre} {!ruta.activo && '(Inactiva)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div style={{ marginTop: '2rem' }}>
             <button type="submit" disabled={saving} style={{
               width: '100%',

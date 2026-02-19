@@ -80,6 +80,18 @@ function NavLinks() {
                 </Link>
             )}
             {session?.user.rol === 'ADMIN' && (
+                <Link href="/rutas" className="nav-link" style={{
+                    textDecoration: 'none',
+                    color: isActive('/rutas') || pathname?.startsWith('/rutas/') ? '#0070f3' : '#666',
+                    fontWeight: isActive('/rutas') || pathname?.startsWith('/rutas/') ? '600' : '400',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '4px',
+                    backgroundColor: isActive('/rutas') || pathname?.startsWith('/rutas/') ? '#f0f7ff' : 'transparent'
+                }}>
+                    Rutas
+                </Link>
+            )}
+            {session?.user.rol === 'ADMIN' && (
                 <Link href="/users" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/users') ? '#0070f3' : '#666',

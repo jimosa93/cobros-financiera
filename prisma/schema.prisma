@@ -7,6 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Ruta {
+  id            Int        @id @default(autoincrement())
+  nombre        String
+  activo        Boolean    @default(true)
+  fechaCreacion DateTime   @default(now())
+  clientes      Cliente[]
+  prestamos     Prestamo[]
+  usuarios      Usuario[]
+  cajas         Caja[]
+}
+
 model Cliente {
   id                Int        @id @default(autoincrement())
   nombreCompleto    String
@@ -14,7 +25,10 @@ model Cliente {
   direccionNegocio  String?
   direccionVivienda String?
   fechaCreacion     DateTime
+  rutaId            Int
+  ruta              Ruta       @relation(fields: [rutaId], references: [id])
   prestamos         Prestamo[]
+  @@index([rutaId])
 }
 
 model Usuario {
@@ -29,8 +43,11 @@ model Usuario {
   fechaTecnico   DateTime?
   fechaSoat      DateTime?
   password       String?
+  rutaId         Int?
+  ruta           Ruta?      @relation(fields: [rutaId], references: [id])
   abonos         Abono[]
   prestamos      Prestamo[] @relation("prestamosCobrador")
+  @@index([rutaId])
 }
 
 model Prestamo {
@@ -45,10 +62,13 @@ model Prestamo {
   cobradorId    Int
   notas         String?
   orden         Int
+  rutaId        Int
+  ruta          Ruta     @relation(fields: [rutaId], references: [id])
   abonos        Abono[]
   cliente       Cliente  @relation(fields: [clienteId], references: [id])
   cobrador      Usuario  @relation("prestamosCobrador", fields: [cobradorId], references: [id])
   @@index([estado])
+  @@index([rutaId])
 }
 
 model Abono {
@@ -64,11 +84,14 @@ model Abono {
 }
 
 model Caja {
-  id    Int            @id @default(autoincrement())
-  fecha DateTime
-  tipo  MovimientoTipo
-  monto Decimal
-  nota  String?
+  id     Int            @id @default(autoincrement())
+  fecha  DateTime
+  tipo   MovimientoTipo
+  monto  Decimal
+  nota   String?
+  rutaId Int?
+  ruta   Ruta?          @relation(fields: [rutaId], references: [id])
+  @@index([rutaId])
 }
 
 enum Rol {

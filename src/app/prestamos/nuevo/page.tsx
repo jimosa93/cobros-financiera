@@ -10,6 +10,13 @@ import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
 interface Cliente {
   id: number;
   nombreCompleto: string;
+  rutaId: number;
+}
+
+interface Ruta {
+  id: number;
+  nombre: string;
+  activo: boolean;
 }
 
 const INTERESES = [0.1, 0.2, 0.3];
@@ -18,10 +25,10 @@ export default function NuevoPrestamoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [cargandoClientes, setCargandoClientes] = useState(true);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
   const [error, setError] = useState<string>("");
 
-  // Form state
+  const [rutaId, setRutaId] = useState("");
   const [clienteId, setClienteId] = useState("");
   const [monto, setMonto] = useState("");
   const [cuotas, setCuotas] = useState("");
@@ -33,19 +40,28 @@ export default function NuevoPrestamoPage() {
   const [guardando, setGuardando] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Cargar clientes existentes
   useEffect(() => {
-    const fetchClientes = async () => {
-      try {
-        const res = await fetch("/api/clientes?pageSize=1000");
+    const fetchRutas = async () => {
+      const res = await fetch("/api/rutas");
+      const data = await res.json();
+      setRutas(data.rutas || []);
+    };
+    fetchRutas().catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (rutaId) {
+      const fetchClientes = async () => {
+        const res = await fetch(`/api/clientes?pageSize=1000&rutaId=${rutaId}`);
         const data = await res.json();
         setClientes(data.clientes || []);
-      } finally {
-        setCargandoClientes(false);
-      }
-    };
-    fetchClientes();
-  }, []);
+      };
+      fetchClientes().catch(console.error);
+    } else {
+      setClientes([]);
+    }
+    setClienteId("");
+  }, [rutaId]);
 
   if (status === "loading") {
     return <div style={{ textAlign: 'center', padding: '2rem' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>;
@@ -78,10 +94,12 @@ export default function NuevoPrestamoPage() {
           fechaInicio: fechaISOFull,
           notas: nota,
           cobradorId: session.user.id,
+          rutaId: parseInt(rutaId, 10),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error inesperado");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Préstamo creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
       router.push('/prestamos');
     } catch (err: unknown) {
@@ -101,9 +119,19 @@ export default function NuevoPrestamoPage() {
           <Field label="Fecha">
             <ReadonlyInput value={fechaDisplay} type="text" />
           </Field>
+          <Field label="Ruta *">
+            <Select value={rutaId} onChange={e => setRutaId(e.target.value)} required>
+              <option value="" disabled>Selecciona una ruta…</option>
+              {rutas.map(r => (
+                <option key={r.id} value={r.id}>{r.nombre}</option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Cliente *">
-            <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required>
-              <option value="" disabled>Selecciona un cliente…</option>
+            <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required disabled={!rutaId}>
+              <option value="" disabled>
+                {rutaId ? 'Selecciona un cliente…' : 'Primero selecciona una ruta'}
+              </option>
               {clientes.map(c => (
                 <option key={c.id} value={c.id}>{c.nombreCompleto}</option>
               ))}

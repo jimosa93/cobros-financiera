@@ -86,6 +86,7 @@ export default function RegisterPage() {
                     fechaTecnico: '',
                     fechaSoat: '',
                 });
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
                 router.push('/users');
             }

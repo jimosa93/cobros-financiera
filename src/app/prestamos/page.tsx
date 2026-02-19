@@ -261,26 +261,28 @@ export default function PrestamosPage() {
                             <td className="table-cell">{p.fechaInicio ? (addDaysSkippingSundaysExcludingStart(p.fechaInicio, p.cuotas) ? addDaysSkippingSundaysExcludingStart(p.fechaInicio, p.cuotas)!.toLocaleDateString('es-ES') : '-') : '-'}</td>
                             <td className="table-cell">{valorCuota > 0 ? Math.floor((abonoSums[p.id] || 0) / valorCuota) : 0}</td>
                             <td className="table-cell">{atrasadas > 0 ? atrasadas : 0}</td>
-                            {isAdmin ? (
-                              <td className="table-cell" style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
-                                <button aria-label="Editar" title="Editar" onClick={() => window.location.href = `/prestamos/${p.id}/editar`} style={{ padding: 8, border: '1px solid #bbb', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                </button>
-                                <button aria-label="Eliminar" title="Eliminar" onClick={() => eliminarPrestamo(p.id)} style={{ padding: 8, border: '1px solid #e57373', background: '#e57373', borderRadius: 6, cursor: 'pointer' }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M14 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                </button>
-                                <button aria-label="Tarjeta" title="Tarjeta" onClick={() => {
-                                  const clienteIdParam = (p as unknown as { cliente?: { id: number } }).cliente?.id ?? (p as unknown as { clienteId?: number }).clienteId;
-                                  const qs = new URLSearchParams();
-                                  qs.set('prestamoId', String(p.id));
-                                  if (clienteIdParam) qs.set('clienteId', String(clienteIdParam));
-                                  window.location.href = `/tarjeta-virtual?${qs.toString()}`;
-                                }} style={{ padding: 8, border: '1px solid #ccc', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                </button>
-                              </td>) : (
-                              <td className="table-cell"> - </td>
-                            )}
+
+                            <td className="table-cell" style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
+                              {isAdmin && (
+                                <>
+                                  <button aria-label="Editar" title="Editar" onClick={() => window.location.href = `/prestamos/${p.id}/editar`} style={{ padding: 8, border: '1px solid #bbb', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                  </button>
+                                  <button aria-label="Eliminar" title="Eliminar" onClick={() => eliminarPrestamo(p.id)} style={{ padding: 8, border: '1px solid #e57373', background: '#e57373', borderRadius: 6, cursor: 'pointer' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M14 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                  </button>
+                                </>
+                              )}
+                              <button aria-label="Tarjeta" title="Tarjeta" onClick={() => {
+                                const clienteIdParam = (p as unknown as { cliente?: { id: number } }).cliente?.id ?? (p as unknown as { clienteId?: number }).clienteId;
+                                const qs = new URLSearchParams();
+                                qs.set('prestamoId', String(p.id));
+                                if (clienteIdParam) qs.set('clienteId', String(clienteIdParam));
+                                window.location.href = `/tarjeta-virtual?${qs.toString()}`;
+                              }} style={{ padding: 8, border: '1px solid #ccc', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="14" rx="2" stroke="#111" strokeWidth="1.2" /><path d="M7 8h10" stroke="#111" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              </button>
+                            </td>
                           </RowSortable>
                         );
                       })}

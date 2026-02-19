@@ -39,11 +39,11 @@ export default function AbonosPage() {
     const res = await fetch(`/api/abonos/${id}`, { method: "DELETE" });
     const info = await res.json();
     if (!res.ok) {
-      try { toast.addToast({ message: info.error || "No se pudo eliminar", type: 'error' }); } catch (e) { }
+      toast.addToast({ message: info.error || "No se pudo eliminar", type: 'error' });
       return;
     }
     setAbonos(prev => prev.filter(a => a.id !== id));
-    try { toast.addToast({ message: 'Abono eliminado', type: 'success' }); } catch (e) { }
+    toast.addToast({ message: 'Abono eliminado', type: 'success' });
   }
 
   return (
