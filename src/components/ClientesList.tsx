@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/Toast';
 import { Navbar } from './Navbar';
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from './RutaBanner';
 
 import { IconButton, Pagination } from '@/components/TableControls';
 import SearchBar from './SearchBar';
@@ -29,6 +31,7 @@ interface Pagination {
 export default function ClientesList() {
   const { data: session } = useSession();
   const toast = useToast();
+  const { rutaSeleccionada } = useRuta();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,6 +57,9 @@ export default function ClientesList() {
       if (searchTerm) {
         params.append('search', searchTerm);
       }
+      if (session?.user.rol === 'ADMIN' && rutaSeleccionada) {
+        params.append('rutaId', rutaSeleccionada.toString());
+      }
 
       const response = await fetch(`/api/clientes?${params}`);
       const data = await response.json();
@@ -73,7 +79,7 @@ export default function ClientesList() {
 
   useEffect(() => {
     fetchClientes(1, search);
-  }, [search]);
+  }, [search, rutaSeleccionada]);
 
   const handleDelete = (id: number) => {
     setClienteToDelete(id);
@@ -118,6 +124,7 @@ export default function ClientesList() {
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       <Navbar />
       <main style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+        <RutaBanner />
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',

@@ -7,16 +7,25 @@ import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, ReadonlyInput, Select, Input, Textarea } from '@/components/FormControls';
 
+interface Ruta {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
 export default function NuevoCajaPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [tipo, setTipo] = useState('ENTRADA');
   const [monto, setMonto] = useState('');
   const [nota, setNota] = useState('');
+  const [rutaId, setRutaId] = useState('');
+  const [rutas, setRutas] = useState<Ruta[]>([]);
+  const [loadingRutas, setLoadingRutas] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const now = new Date();
-  const fechaISOFull = now.toISOString(); // full ISO with time for storage  
-  const fechaDisplay = new Date().toLocaleDateString('es-ES'); // dd/mm/yyyy
+  const fechaISOFull = now.toISOString();
+  const fechaDisplay = new Date().toLocaleDateString('es-ES');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -24,6 +33,23 @@ export default function NuevoCajaPage() {
       router.replace('/');
     }
   }, [session, status, router]);
+
+  useEffect(() => {
+    const fetchRutas = async () => {
+      try {
+        const res = await fetch('/api/rutas');
+        if (res.ok) {
+          const data = await res.json();
+          setRutas(data.rutas || []);
+        }
+      } catch (error) {
+        console.error('Error loading rutas:', error);
+      } finally {
+        setLoadingRutas(false);
+      }
+    };
+    fetchRutas();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +63,7 @@ export default function NuevoCajaPage() {
           tipo,
           monto: monto === '' ? 0 : Number(monto),
           nota,
+          rutaId: rutaId ? parseInt(rutaId) : null,
         }),
       });
       if (!res.ok) throw new Error('Error creando movimiento');
@@ -72,6 +99,21 @@ export default function NuevoCajaPage() {
 
           <Field label="Monto *">
             <Input value={monto} onChange={(e) => setMonto(e.target.value.replace(/[^\d.]/g, ''))} type="number" min={0} required />
+          </Field>
+
+          <Field label="Ruta (Opcional)">
+            {loadingRutas ? (
+              <div style={{ padding: '0.5rem', color: '#666' }}>Cargando rutas...</div>
+            ) : (
+              <Select value={rutaId} onChange={(e) => setRutaId(e.target.value)}>
+                <option value="">Sin ruta específica</option>
+                {rutas.map((ruta) => (
+                  <option key={ruta.id} value={ruta.id}>
+                    {ruta.nombre}
+                  </option>
+                ))}
+              </Select>
+            )}
           </Field>
 
           <Field label="Nota">

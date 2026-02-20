@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useToast } from '@/components/Toast';
-// removed unused style imports
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from '@/components/RutaBanner';
 import SearchBar from '@/components/SearchBar';
 import { Pagination } from '@/components/TableControls';
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragEndEvent } from '@dnd-kit/core';
@@ -92,10 +93,10 @@ export default function PrestamosPage() {
   const { data: session } = useSession();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
   const toast = useToast();
+  const { rutaSeleccionada } = useRuta();
 
   const [prestamos, setPrestamos] = useState<Prestamo[]>([]);
   const [loading, setLoading] = useState(true);
-  // removed unused error state
   const [abonoSums, setAbonoSums] = useState<Record<number, number>>({});
   const [abonosToday, setAbonosToday] = useState<Set<number>>(new Set());
   const [query, setQuery] = useState('');
@@ -109,7 +110,15 @@ export default function PrestamosPage() {
   useEffect(() => {
     setLoading(true);
     (async () => {
-      const res = await fetch(`/api/prestamos?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        search: query,
+      });
+      if (isAdmin && rutaSeleccionada) {
+        params.append('rutaId', rutaSeleccionada.toString());
+      }
+      const res = await fetch(`/api/prestamos?${params}`);
       const data = await res.json();
       const items: Prestamo[] = data.prestamos || [];
       // mostrar solo préstamos activos en esta vista
@@ -149,7 +158,7 @@ export default function PrestamosPage() {
         setLoading(false);
       }
     })();
-  }, [page, pageSize, query, moving]);
+  }, [page, pageSize, query, moving, rutaSeleccionada]);
 
   const calculate = (monto: string, tasa: number, cuotas: number) => {
     const montoNum = parseFloat(monto);
@@ -192,6 +201,7 @@ export default function PrestamosPage() {
     <div className="app-bg">
       <Navbar />
       <main className="app-main">
+        <RutaBanner />
         <h1 className="page-title">Préstamos</h1>
         <SearchBar
           value={query}

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from '@/components/RutaBanner';
 import Spinner from '@/components/Spinner';
 
 interface CobradorRow { cobradorId: number; nombre: string | null; monto: string; count: number; }
@@ -44,6 +46,7 @@ interface DailyReport {
 export default function ReportsDailyPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { rutaSeleccionada } = useRuta();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DailyReport | null>(null);
 
@@ -62,6 +65,9 @@ export default function ReportsDailyPage() {
         const params = new URLSearchParams();
         params.set('start', startLocal.toISOString());
         params.set('end', endLocal.toISOString());
+        if (rutaSeleccionada) {
+          params.set('rutaId', rutaSeleccionada.toString());
+        }
         const res = await fetch(`/api/reports/daily?${params.toString()}`);
         const json = await res.json();
         setData(json);
@@ -71,7 +77,7 @@ export default function ReportsDailyPage() {
         setLoading(false);
       }
     })();
-  }, [status, router, session]);
+  }, [status, router, session, rutaSeleccionada]);
 
   // consignaciones (con-supervisor / con-jefe) for the day
   const [consignaciones, setConsignaciones] = useState<AbonoConsignacion[]>([]);
@@ -114,6 +120,7 @@ export default function ReportsDailyPage() {
     <div className="app-bg">
       <Navbar />
       <main className="app-main">
+        <RutaBanner />
         <div style={{ marginBottom: 12 }}>
           <Link href="/reports" aria-label="Volver a Reportes" style={{ color: '#0070f3', textDecoration: 'none' }}>← Atrás</Link>
         </div>

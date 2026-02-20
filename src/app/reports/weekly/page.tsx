@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from '@/components/RutaBanner';
 import Spinner from '@/components/Spinner';
 
 interface CajaTotals {
@@ -34,6 +36,7 @@ interface WeeklyReport {
 export default function ReportsWeeklyPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { rutaSeleccionada } = useRuta();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<WeeklyReport | null>(null);
 
@@ -47,12 +50,15 @@ export default function ReportsWeeklyPage() {
       setLoading(true);
       try {
         const now = new Date();
-        const dayOfWeek = (now.getDay() + 6) % 7; // 0 = Monday
+        const dayOfWeek = (now.getDay() + 6) % 7;
         const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
-        const endLocal = new Date(startLocal.getTime() + 6 * 24 * 60 * 60 * 1000); // next Monday exclusive
+        const endLocal = new Date(startLocal.getTime() + 6 * 24 * 60 * 60 * 1000);
         const params = new URLSearchParams();
         params.set('start', startLocal.toISOString());
         params.set('end', endLocal.toISOString());
+        if (rutaSeleccionada) {
+          params.set('rutaId', rutaSeleccionada.toString());
+        }
         const res = await fetch(`/api/reports/weekly?${params.toString()}`);
         const json = await res.json();
         setData(json);
@@ -62,7 +68,7 @@ export default function ReportsWeeklyPage() {
         setLoading(false);
       }
     })();
-  }, [status, router, session]);
+  }, [status, router, session, rutaSeleccionada]);
 
   // consignaciones for the week
   interface AbonoConsignacion {
@@ -139,6 +145,7 @@ export default function ReportsWeeklyPage() {
     <div className="app-bg">
       <Navbar />
       <main className="app-main">
+        <RutaBanner />
         <div style={{ marginBottom: 12 }}>
           <Link href="/reports" aria-label="Volver a Reportes" style={{ color: '#0070f3', textDecoration: 'none' }}>← Atrás</Link>
         </div>

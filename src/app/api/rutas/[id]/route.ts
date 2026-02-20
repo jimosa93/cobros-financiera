@@ -8,16 +8,18 @@ export async function GET(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.rol !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
+    const { id } = await params;
+    const idNum = parseInt(id, 10);
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+    // Allow admins or the cobrador assigned to this ruta to fetch it
+    if (user.rol !== 'ADMIN' && user.rutaId !== idNum) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id } = await params;
     const ruta = await prisma.ruta.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: idNum },
       include: {
         usuarios: {
           select: {

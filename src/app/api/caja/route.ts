@@ -19,14 +19,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ caja: item });
     }
 
-    // Otherwise return paginated list
+    const rutaIdParam = searchParams.get('rutaId');
+    const where = rutaIdParam ? { rutaId: parseInt(rutaIdParam) } : {};
+
     const [items, total] = await Promise.all([
       prisma.caja.findMany({
+        where,
         orderBy: { fecha: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.caja.count(),
+      prisma.caja.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -47,7 +50,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fecha, tipo, monto, nota } = body;
+    const { fecha, tipo, monto, nota, rutaId } = body;
 
     if (!fecha || !tipo || monto === undefined || monto === null) {
       return NextResponse.json({ error: 'Campos requeridos faltantes' }, { status: 400 });
@@ -58,6 +61,7 @@ export async function POST(request: NextRequest) {
         tipo,
         monto: String(monto),
         nota: nota || null,
+        rutaId: rutaId ? parseInt(rutaId) : null,
       },
     });
 

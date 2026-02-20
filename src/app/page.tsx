@@ -4,17 +4,66 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [rutaAsignada, setRutaAsignada] = useState<{ id: number; nombre: string } | null>(null);
+  const [loadingRuta, setLoadingRuta] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     }
   }, [status, router]);
+
+  useEffect(() => {
+    if (!session) return;
+    
+    const loadRuta = async () => {
+      const userRole = session.user.rol;
+      let rutaId = (session.user as any).rutaId;
+
+      // If session doesn't include rutaId (stale session), try fetching fresh user data
+      if ((!rutaId || rutaId === null) && (session.user as any).id) {
+        try {
+          const uid = (session.user as any).id;
+          const ures = await fetch(`/api/users/${uid}`);
+          if (ures.ok) {
+            const uj = await ures.json();
+            const u = uj?.user || uj;
+            rutaId = u?.rutaId ?? rutaId;
+          }
+        } catch (err) {
+          console.warn('Unable to fetch fresh user data for rutaId fallback', err);
+        }
+      }
+
+      if (!rutaId || userRole !== 'COBRADOR') {
+        setRutaAsignada(null);
+        return;
+      }
+
+      try {
+        setLoadingRuta(true);
+        const res = await fetch(`/api/rutas/${rutaId}`);
+        if (!res.ok) {
+          setRutaAsignada(null);
+          return;
+        }
+        const j = await res.json();
+        const r = j?.ruta || j;
+        if (r && typeof r === 'object') setRutaAsignada({ id: r.id, nombre: r.nombre });
+      } catch (e) {
+        console.error('Error loading ruta asignada:', e);
+        setRutaAsignada(null);
+      } finally {
+        setLoadingRuta(false);
+      }
+    };
+    loadRuta();
+  }, [session]);
 
   if (status === 'loading') {
     return (
@@ -135,9 +184,17 @@ export default function Home() {
             </p>
           )}
           {userRole === 'COBRADOR' && (
-            <p style={{ color: '#666' }}>
-              Puedes registrar abonos y consultar información de tus clientes asignados.
-            </p>
+            <>
+              <p style={{ color: '#666' }}>
+                Puedes registrar abonos y consultar información de tus clientes asignados.
+              </p>
+              <p style={{ color: '#666', marginTop: '0.5rem' }}>
+                Ruta asignada:{' '}
+                <strong>
+                  {loadingRuta ? 'Cargando...' : (rutaAsignada ? rutaAsignada.nombre : 'No asignada')}
+                </strong>
+              </p>
+            </>
           )}
         </div>
       </main>

@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { Navbar } from '@/components/Navbar';
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from '@/components/RutaBanner';
 import Spinner from '@/components/Spinner';
 import Link from 'next/link';
 
@@ -19,6 +21,7 @@ interface Row {
 }
 
 export default function ReportsCajaPage() {
+  const { rutaSeleccionada } = useRuta();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -26,14 +29,16 @@ export default function ReportsCajaPage() {
     (async () => {
       setLoading(true);
       try {
-        // request a historical range (last 30 days including today) by sending explicit start/end ISO instants
         const now = new Date();
         const DAYS = 30;
-        const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (DAYS - 1), 0, 0, 0, 0); // 29 days before today
-        const endLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0); // exclusive next day
+        const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (DAYS - 1), 0, 0, 0, 0);
+        const endLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
         const params = new URLSearchParams();
         params.set('start', startLocal.toISOString());
         params.set('end', endLocal.toISOString());
+        if (rutaSeleccionada) {
+          params.set('rutaId', rutaSeleccionada.toString());
+        }
         const res = await fetch(`/api/reports/caja?${params.toString()}`);
         const j = await res.json();
         setRows(j.rows || []);
@@ -44,12 +49,13 @@ export default function ReportsCajaPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [rutaSeleccionada]);
 
   return (
     <div className="app-bg">
       <Navbar />
       <main className="app-main">
+        <RutaBanner />
         <div style={{ marginBottom: 12 }}>
           <Link href="/reports" style={{ color: '#0070f3', textDecoration: 'none' }}>← Atrás</Link>
         </div>

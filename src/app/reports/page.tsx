@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from '@/components/RutaBanner';
 
 interface CajaToday {
   fecha: string;
@@ -22,6 +24,7 @@ interface CajaToday {
 export default function ReportsIndex() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { rutaSeleccionada } = useRuta();
   const [today, setToday] = useState<CajaToday | null>(null);
   const [prevCajaFin, setPrevCajaFin] = useState<number>(0);
   useEffect(() => {
@@ -30,7 +33,14 @@ export default function ReportsIndex() {
         const now = new Date();
         const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
         const endLocal = new Date(startLocal.getTime() + 24 * 60 * 60 * 1000);
-        const res = await fetch(`/api/reports/caja?start=${encodeURIComponent(startLocal.toISOString())}&end=${encodeURIComponent(endLocal.toISOString())}`);
+        const params = new URLSearchParams({
+          start: startLocal.toISOString(),
+          end: endLocal.toISOString(),
+        });
+        if (rutaSeleccionada) {
+          params.append('rutaId', rutaSeleccionada.toString());
+        }
+        const res = await fetch(`/api/reports/caja?${params}`);
         const j = await res.json();
         // console.log('j caja', j);
         const rows: CajaToday[] = j.rows || [];
@@ -55,7 +65,7 @@ export default function ReportsIndex() {
         setToday(null);
       }
     })();
-  }, []);
+  }, [rutaSeleccionada]);
 
   if (status === 'loading') return null;
   if (!session || session.user?.rol !== 'ADMIN') {
@@ -67,6 +77,7 @@ export default function ReportsIndex() {
     <div className="app-bg">
       <Navbar />
       <main className="app-main">
+        <RutaBanner />
         <h1 className="page-title">Reportes</h1>
         <p style={{ color: '#666', marginTop: 8, marginBottom: 12 }}>Accede a reportes del sistema. Solo administradores.</p>
         <div className="dashboard-grid">

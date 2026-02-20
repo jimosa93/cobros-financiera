@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, fecha, tipo, monto, nota } = body;
+    const { id, fecha, tipo, monto, nota, rutaId } = body;
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
     const pid = parseInt(String(id), 10);
     const prismaAny = prisma as PrismaClient;
@@ -18,19 +18,20 @@ export async function POST(request: NextRequest) {
           tipo: tipo || undefined,
           monto: monto !== undefined && monto !== null ? String(monto) : undefined,
           nota: nota || undefined,
+          rutaId: rutaId ? parseInt(rutaId) : null,
         },
       });
     } else {
-      // Use parameterized query to avoid SQL syntax issues and injection
       const rows = await (prisma as PrismaClient).$queryRaw`
         UPDATE "Caja"
         SET
           "fecha" = ${fecha ? new Date(fecha) : null}::timestamp,
           "tipo" = ${tipo ? tipo : null}::"MovimientoTipo",
           "monto" = ${monto !== undefined && monto !== null ? String(monto) : null}::numeric,
-          "nota" = ${nota || null}::text
+          "nota" = ${nota || null}::text,
+          "rutaId" = ${rutaId ? parseInt(rutaId) : null}::integer
         WHERE id = ${pid}
-        RETURNING id, fecha, tipo, monto, nota
+        RETURNING id, fecha, tipo, monto, nota, "rutaId"
       `;
       updated = Array.isArray(rows) && rows[0] ? rows[0] : null;
     }

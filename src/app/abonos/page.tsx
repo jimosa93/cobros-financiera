@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from '@/components/RutaBanner';
 import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
 import { useRouter } from "next/navigation";
@@ -15,6 +17,7 @@ export default function AbonosPage() {
   const canCreateAbono = isAdmin || (!!session && session.user?.rol === 'COBRADOR');
   const router = useRouter();
   const toast = useToast();
+  const { rutaSeleccionada } = useRuta();
   const [abonos, setAbonos] = useState<{ id: number; fecha: string; prestamo?: { cliente?: { nombreCompleto: string } }; prestamoId: number; monto: string; tipoPago: string; cobrador?: { nombreCompleto: string }; notas: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -25,14 +28,22 @@ export default function AbonosPage() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const res = await fetch(`/api/abonos?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        search: query,
+      });
+      if (isAdmin && rutaSeleccionada) {
+        params.append('rutaId', rutaSeleccionada.toString());
+      }
+      const res = await fetch(`/api/abonos?${params}`);
       const data = await res.json();
       setAbonos(data.abonos || []);
       setTotal(data.total || 0);
       setLoading(false);
     };
     load();
-  }, [page, pageSize, query]);
+  }, [page, pageSize, query, rutaSeleccionada, isAdmin]);
 
   async function eliminar(id: number) {
     if (!confirm("¿Eliminar abono?")) return;
@@ -50,6 +61,7 @@ export default function AbonosPage() {
     <div className="app-bg">
       <Navbar />
       <main className="app-main">
+        <RutaBanner />
         <h1 className="page-title">Abonos</h1>
         <SearchBar
           value={query}

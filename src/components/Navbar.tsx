@@ -4,6 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useRuta } from '@/contexts/RutaContext';
 
 function NavLinks() {
     const { data: session } = useSession();
@@ -110,6 +111,7 @@ function NavLinks() {
 export function Navbar() {
     const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false);
+    const { rutaSeleccionada, setRutaSeleccionada, rutas, loadingRutas } = useRuta();
     if (!session) return null;
 
     return (
@@ -158,6 +160,34 @@ export function Navbar() {
             </div>
 
             <div className="user-section" style={{ alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                {session?.user.rol === 'ADMIN' && !loadingRutas && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label style={{ color: '#666', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                            Ruta:
+                        </label>
+                        <select
+                            value={rutaSeleccionada || ''}
+                            onChange={(e) => setRutaSeleccionada(e.target.value ? parseInt(e.target.value) : null)}
+                            style={{
+                                padding: '0.4rem 0.6rem',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                fontSize: '0.85rem',
+                                backgroundColor: rutaSeleccionada ? '#e3f2fd' : 'white',
+                                color: '#333',
+                                cursor: 'pointer',
+                                fontWeight: rutaSeleccionada ? '600' : '400'
+                            }}
+                        >
+                            <option value="">Todas las rutas</option>
+                            {rutas.map((ruta) => (
+                                <option key={ruta.id} value={ruta.id}>
+                                    {ruta.nombre}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
                 <span style={{ color: '#666', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
                     {session?.user.name} ({session?.user.rol})
                 </span>
@@ -184,7 +214,39 @@ export function Navbar() {
                     <NavLinks />
                 </div>
                 <div style={{ height: 1, background: '#efefef', margin: '0.75rem 0' }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {session?.user.rol === 'ADMIN' && !loadingRutas && (
+                    <>
+                        <div style={{ marginBottom: '0.75rem' }}>
+                            <label style={{ display: 'block', color: '#666', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                                Filtrar por Ruta:
+                            </label>
+                            <select
+                                value={rutaSeleccionada || ''}
+                                onChange={(e) => setRutaSeleccionada(e.target.value ? parseInt(e.target.value) : null)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '4px',
+                                    fontSize: '0.9rem',
+                                    backgroundColor: rutaSeleccionada ? '#e3f2fd' : 'white',
+                                    color: '#333',
+                                    cursor: 'pointer',
+                                    fontWeight: rutaSeleccionada ? '600' : '400'
+                                }}
+                            >
+                                <option value="">Todas las rutas</option>
+                                {rutas.map((ruta) => (
+                                    <option key={ruta.id} value={ruta.id}>
+                                        {ruta.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div style={{ height: 1, background: '#efefef', margin: '0.75rem 0' }} />
+                    </>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div style={{ color: '#666', fontSize: '0.95rem' }}>
                         {session?.user.name} ({session?.user.rol})
                     </div>

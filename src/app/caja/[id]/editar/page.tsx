@@ -8,6 +8,12 @@ import FormCard from '@/components/FormCard';
 import { Field, ReadonlyInput, Select, Input, Textarea } from '@/components/FormControls';
 import Spinner from '@/components/Spinner';
 
+interface Ruta {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
 export default function EditCajaPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -19,8 +25,28 @@ export default function EditCajaPage() {
   const [tipo, setTipo] = useState('ENTRADA');
   const [monto, setMonto] = useState('');
   const [nota, setNota] = useState('');
+  const [rutaId, setRutaId] = useState('');
+  const [rutas, setRutas] = useState<Ruta[]>([]);
+  const [loadingRutas, setLoadingRutas] = useState(true);
   const [fechaDisplay, setFechaDisplay] = useState('');
   const [fechaISOFull, setFechaISOFull] = useState('');
+
+  useEffect(() => {
+    const fetchRutas = async () => {
+      try {
+        const res = await fetch('/api/rutas');
+        if (res.ok) {
+          const data = await res.json();
+          setRutas(data.rutas || []);
+        }
+      } catch (error) {
+        console.error('Error loading rutas:', error);
+      } finally {
+        setLoadingRutas(false);
+      }
+    };
+    fetchRutas();
+  }, []);
 
   useEffect(() => {
     if (status === 'loading') {
@@ -44,7 +70,6 @@ export default function EditCajaPage() {
         }
         const d = await res.json();
         let item = d?.caja;
-        // API may return the item directly or inside an array; normalize to single object
         if (Array.isArray(item)) item = item[0];
         if (!item) {
           console.warn('Caja item not found for id', id);
@@ -54,6 +79,7 @@ export default function EditCajaPage() {
         setTipo(item.tipo);
         setMonto(String(item.monto));
         setNota(item.nota || '');
+        setRutaId(item.rutaId ? String(item.rutaId) : '');
         const date = new Date(item.fecha);
         if (!isNaN(date.getTime())) {
           setFechaISOFull(date.toISOString());
@@ -85,6 +111,7 @@ export default function EditCajaPage() {
           tipo,
           monto: monto === '' ? 0 : Number(monto),
           nota,
+          rutaId: rutaId ? parseInt(rutaId) : null,
         }),
       });
       if (!res.ok) throw new Error('Error actualizando');
@@ -120,6 +147,21 @@ export default function EditCajaPage() {
 
             <Field label="Monto *">
               <Input value={monto} onChange={(e) => setMonto(e.target.value.replace(/[^\d.]/g, ''))} type="number" min={0} required />
+            </Field>
+
+            <Field label="Ruta (Opcional)">
+              {loadingRutas ? (
+                <div style={{ padding: '0.5rem', color: '#666' }}>Cargando rutas...</div>
+              ) : (
+                <Select value={rutaId} onChange={(e) => setRutaId(e.target.value)}>
+                  <option value="">Sin ruta específica</option>
+                  {rutas.map((ruta) => (
+                    <option key={ruta.id} value={ruta.id}>
+                      {ruta.nombre}
+                    </option>
+                  ))}
+                </Select>
+              )}
             </Field>
 
             <Field label="Nota">

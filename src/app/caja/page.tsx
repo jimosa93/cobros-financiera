@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
+import { useRuta } from '@/contexts/RutaContext';
+import { RutaBanner } from '@/components/RutaBanner';
 import SearchBar from '@/components/SearchBar';
 import { cardStyle } from '@/styles/ui';
 import { Pagination, IconButton } from '@/components/TableControls';
@@ -23,6 +25,7 @@ export default function CajaPage() {
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
   const router = useRouter();
   const toast = useToast();
+  const { rutaSeleccionada } = useRuta();
   const [items, setItems] = useState<CajaItem[]>([]);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -32,7 +35,14 @@ export default function CajaPage() {
   const fetchData = async (p = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/caja?page=${p}&limit=50`);
+      const params = new URLSearchParams({
+        page: p.toString(),
+        limit: '50',
+      });
+      if (rutaSeleccionada) {
+        params.append('rutaId', rutaSeleccionada.toString());
+      }
+      const res = await fetch(`/api/caja?${params}`);
       const d = await res.json();
       setItems(d.caja || []);
       setTotalPages(Math.max(1, d.pagination?.totalPages || 1));
@@ -46,7 +56,7 @@ export default function CajaPage() {
 
   useEffect(() => {
     fetchData(page);
-  }, [page]);
+  }, [page, rutaSeleccionada]);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -57,6 +67,7 @@ export default function CajaPage() {
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Navbar />
       <main style={{ padding: '2rem', maxWidth: 1200, margin: '0 auto' }}>
+        <RutaBanner />
         <h1 style={{ marginBottom: '1rem', color: '#333' }}>Caja</h1>
 
         <div style={{ marginBottom: '1rem', ...cardStyle as React.CSSProperties }}>
