@@ -187,10 +187,34 @@ export default function Home() {
                 Puedes registrar abonos y consultar información de tus clientes asignados.
               </p>
               <p style={{ color: '#666', marginTop: '0.5rem' }}>
-                Ruta asignada:{' '}
-                <strong>
-                  {loadingRuta ? 'Cargando...' : (rutasAsignadas.length > 0 ? rutasAsignadas.map(r => r.nombre).join(', ') : 'No asignada')}
-                </strong>
+                Rutas asignadas:{' '}
+                {loadingRuta ? (
+                  <strong>Cargando...</strong>
+                ) : (
+                  rutasAsignadas.length > 0 ? (
+                    <span>
+                      {rutasAsignadas.map(r => (
+                        <span
+                          key={r.id}
+                          style={{
+                            display: 'inline-block',
+                            background: '#eef2ff',
+                            color: '#322659',
+                            padding: '4px 8px',
+                            borderRadius: 12,
+                            marginRight: 8,
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {r.nombre}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <strong>No asignada</strong>
+                  )
+                )}
               </p>
             </>
           )}
