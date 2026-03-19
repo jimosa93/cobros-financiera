@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { hash } from 'bcryptjs';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Permiso, type Rol } from '@prisma/client';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       celular,
       email,
       alias: alias || null,
-      rol: rol as 'ADMIN' | 'USUARIO',
+      rol: rol as Rol,
       placaMoto: placaMoto || null,
       fechaTecnico: fechaTecnico ? new Date(fechaTecnico) : null,
       fechaSoat: fechaSoat ? new Date(fechaSoat) : null,
@@ -59,13 +59,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data.ruta = { disconnect: true };
     }
     if (password) data.password = await hash(password, 12);
-    const permisoList = Array.isArray(permisos) ? permisos as string[] : [];
+    const permisoList = Array.isArray(permisos) ? (permisos as string[]) : [];
     await prisma.$transaction(async (tx) => {
       await tx.usuario.update({ where: { id: idNum }, data });
       await tx.usuarioPermiso.deleteMany({ where: { usuarioId: idNum } });
       if (permisoList.length > 0) {
         await tx.usuarioPermiso.createMany({
-          data: permisoList.map((p) => ({ usuarioId: idNum, permiso: p })),
+          data: permisoList.map((p) => ({ usuarioId: idNum, permiso: p as Permiso })),
           skipDuplicates: true,
         });
       }
