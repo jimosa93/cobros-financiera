@@ -25,20 +25,20 @@ export default function Home() {
 
     const loadRuta = async () => {
       const userRole = session.user.rol;
-      let rutaId = (session.user as { rutaId?: number | null }).rutaId;
-
-      // If session doesn't include rutaId (stale session), try fetching fresh user data
-      if ((!rutaId || rutaId === null) && (session.user as { id?: string }).id) {
+      let rutaId: number | null = null;
+      if ((session.user as { id?: string }).id) {
         try {
           const uid = (session.user as { id?: string }).id;
           const ures = await fetch(`/api/users/${uid}`);
           if (ures.ok) {
             const uj = await ures.json();
             const u = uj?.user || uj;
-            rutaId = u?.rutaId ?? rutaId;
+            if (Array.isArray(u?.rutaIds) && u.rutaIds.length > 0) {
+              rutaId = Number(u.rutaIds[0]);
+            }
           }
         } catch (err) {
-          console.warn('Unable to fetch fresh user data for rutaId fallback', err);
+          console.warn('Unable to fetch fresh user data for ruta fallback', err);
         }
       }
 

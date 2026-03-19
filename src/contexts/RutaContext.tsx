@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface Ruta {
   id: number;
@@ -18,6 +19,7 @@ interface RutaContextType {
 const RutaContext = createContext<RutaContextType | undefined>(undefined);
 
 export function RutaProvider({ children }: { children: ReactNode }) {
+  const { status } = useSession();
   const [rutaSeleccionada, setRutaSeleccionadaState] = useState<number | null>(null);
   const [rutas, setRutas] = useState<Ruta[]>([]);
   const [loadingRutas, setLoadingRutas] = useState(true);
@@ -29,14 +31,31 @@ export function RutaProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    fetchRutas();
-  }, []);
-
-  const fetchRutas = async () => {
+  const fetchRutas = useCallback(async () => {
     try {
+      setLoadingRutas(true);
       const res = await fetch('/api/rutas', { credentials: 'include' });
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Right after login, session cookies can still be settling in some navigations.
+        // Retry once to avoid leaving the route selector empty until manual refresh.
+        if (status === 'authenticated') {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          const retryRes = await fetch('/api/rutas', { credentials: 'include' });
+          if (!retryRes.ok) return;
+          const retryData = await retryRes.json();
+          const loadedRutas: Ruta[] = retryData.rutas || [];
+          setRutas(loadedRutas);
+          if (loadedRutas.length === 0) {
+            setRutaSeleccionada(null);
+          } else if (loadedRutas.length === 1) {
+            setRutaSeleccionada(loadedRutas[0].id);
+          } else if (rutaSeleccionada && !loadedRutas.some((r) => r.id === rutaSeleccionada)) {
+            setRutaSeleccionada(null);
+          }
+          return;
+        }
+        return;
+      }
 
       const contentType = res.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
@@ -45,13 +64,36 @@ export function RutaProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await res.json();
-      setRutas(data.rutas || []);
+      const loadedRutas: Ruta[] = data.rutas || [];
+      setRutas(loadedRutas);
+
+      // Business rule:
+      // - 0 routes: no selection
+      // - 1 route: auto-select it and hide selector in UI
+      // - 2+ routes: keep saved selection if valid, otherwise "all routes" (null)
+      if (loadedRutas.length === 0) {
+        setRutaSeleccionada(null);
+      } else if (loadedRutas.length === 1) {
+        setRutaSeleccionada(loadedRutas[0].id);
+      } else if (rutaSeleccionada && !loadedRutas.some((r) => r.id === rutaSeleccionada)) {
+        setRutaSeleccionada(null);
+      }
     } catch (error) {
       console.error('Error loading rutas:', error);
     } finally {
       setLoadingRutas(false);
     }
-  };
+  }, [rutaSeleccionada, status]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (status === 'unauthenticated') {
+      setRutas([]);
+      setLoadingRutas(false);
+      return;
+    }
+    fetchRutas();
+  }, [status, fetchRutas]);
 
   const setRutaSeleccionada = (rutaId: number | null) => {
     setRutaSeleccionadaState(rutaId);

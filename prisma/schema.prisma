@@ -12,9 +12,9 @@ model Ruta {
   nombre        String
   activo        Boolean    @default(true)
   fechaCreacion DateTime   @default(now())
-  clientes      Cliente[]
   prestamos     Prestamo[]
-  usuarios      Usuario[]
+  clienteRutas  ClienteRuta[]
+  usuarioRutas  UsuarioRuta[]
   cajas         Caja[]
 }
 
@@ -25,10 +25,8 @@ model Cliente {
   direccionNegocio  String?
   direccionVivienda String?
   fechaCreacion     DateTime
-  rutaId            Int
-  ruta              Ruta       @relation(fields: [rutaId], references: [id])
+  rutas             ClienteRuta[]
   prestamos         Prestamo[]
-  @@index([rutaId])
 }
 
 model Usuario {
@@ -43,11 +41,29 @@ model Usuario {
   fechaTecnico   DateTime?
   fechaSoat      DateTime?
   password       String?
-  rutaId         Int?
-  ruta           Ruta?            @relation(fields: [rutaId], references: [id])
+  rutas          UsuarioRuta[]
   abonos         Abono[]
   prestamos      Prestamo[]       @relation("prestamosCobrador")
   permisos       UsuarioPermiso[]
+}
+
+model UsuarioRuta {
+  usuarioId Int
+  rutaId    Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ruta      Ruta    @relation(fields: [rutaId], references: [id], onDelete: Cascade)
+  @@id([usuarioId, rutaId])
+  @@index([usuarioId])
+  @@index([rutaId])
+}
+
+model ClienteRuta {
+  clienteId Int
+  rutaId    Int
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ruta      Ruta    @relation(fields: [rutaId], references: [id], onDelete: Cascade)
+  @@id([clienteId, rutaId])
+  @@index([clienteId])
   @@index([rutaId])
 }
 

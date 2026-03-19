@@ -19,16 +19,18 @@ export async function getCurrentUser() {
       email: true,
       rol: true,
       alias: true,
-      rutaId: true,
-      ruta: {
-        select: {
-          id: true,
-          nombre: true,
-          activo: true,
-        },
-      },
     },
   });
 
-  return user;
+  if (!user) return null;
+
+  const userRutas = await prisma.usuarioRuta.findMany({
+    where: { usuarioId: user.id },
+    select: { rutaId: true },
+  });
+
+  return {
+    ...user,
+    rutaIds: userRutas.map((r) => r.rutaId),
+  };
 }

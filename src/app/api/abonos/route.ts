@@ -29,8 +29,20 @@ export async function GET(request: NextRequest) {
 
     let where: Prisma.AbonoWhereInput = {};
 
-    if (user.rol === 'USUARIO' && user.rutaId) {
-      where.prestamo = { rutaId: user.rutaId };
+    const userRutaIds = Array.isArray(user.rutaIds) ? user.rutaIds : [];
+    if (user.rol === 'USUARIO') {
+      if (userRutaIds.length === 0) {
+        return NextResponse.json({ abonos: [], total: 0, sumMonto: '0' });
+      }
+      if (rutaIdParam) {
+        const selectedRutaId = parseInt(rutaIdParam, 10);
+        if (!userRutaIds.includes(selectedRutaId)) {
+          return NextResponse.json({ abonos: [], total: 0, sumMonto: '0' });
+        }
+        where.prestamo = { rutaId: selectedRutaId };
+      } else {
+        where.prestamo = { rutaId: { in: userRutaIds } };
+      }
     } else if (user.rol === 'ADMIN' && rutaIdParam) {
       where.prestamo = { rutaId: parseInt(rutaIdParam) };
     }

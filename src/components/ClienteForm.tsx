@@ -10,7 +10,7 @@ interface ClienteFormData {
     celular: string;
     direccionNegocio: string;
     direccionVivienda: string;
-    rutaId: string;
+    rutaIds: number[];
 }
 
 interface Ruta {
@@ -32,7 +32,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
         celular: initialData?.celular || '',
         direccionNegocio: initialData?.direccionNegocio || '',
         direccionVivienda: initialData?.direccionVivienda || '',
-        rutaId: '',
+        rutaIds: initialData?.rutaIds || [],
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -53,7 +53,11 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
             const response = await fetch('/api/rutas');
             const data = await response.json();
             if (response.ok) {
-                setRutas(data.rutas);
+                const loadedRutas = data.rutas || [];
+                setRutas(loadedRutas);
+                if (!clienteId && loadedRutas.length === 1) {
+                    setFormData((prev) => ({ ...prev, rutaIds: [loadedRutas[0].id] }));
+                }
             }
         } catch (err) {
             console.error('Error al cargar rutas:', err);
@@ -76,7 +80,9 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                 celular: data.cliente.celular,
                 direccionNegocio: data.cliente.direccionNegocio || '',
                 direccionVivienda: data.cliente.direccionVivienda || '',
-                rutaId: data.cliente.rutaId?.toString() || '',
+                rutaIds: Array.isArray(data.cliente.rutas)
+                    ? data.cliente.rutas.map((r: { rutaId: number }) => r.rutaId)
+                    : [],
             });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Error al cargar cliente');
@@ -85,11 +91,20 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
         });
+    };
+
+    const toggleRuta = (rutaId: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            rutaIds: prev.rutaIds.includes(rutaId)
+                ? prev.rutaIds.filter((id) => id !== rutaId)
+                : [...prev.rutaIds, rutaId],
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -111,7 +126,7 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                     celular: formData.celular,
                     direccionNegocio: formData.direccionNegocio || null,
                     direccionVivienda: formData.direccionVivienda || null,
-                    rutaId: formData.rutaId,
+                    rutaIds: formData.rutaIds,
                 }),
             });
 
@@ -164,33 +179,22 @@ export default function ClienteForm({ clienteId, initialData }: ClienteFormProps
                     <Input id="direccionVivienda" name="direccionVivienda" type="text" value={formData.direccionVivienda} onChange={handleChange} placeholder="Ej: Cra 10 # 20-30" />
                 </Field>
 
-                <Field label="Ruta *">
+                <Field label="Rutas *">
                     {loadingRutas ? (
                         <div style={{ padding: '0.5rem', color: '#666' }}>Cargando rutas...</div>
                     ) : (
-                        <select
-                            id="rutaId"
-                            name="rutaId"
-                            value={formData.rutaId}
-                            onChange={handleChange}
-                            required
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                fontSize: '1rem',
-                                backgroundColor: 'white',
-                                color: '#232323',
-                            }}
-                        >
-                            <option value="">Selecciona una ruta</option>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                             {rutas.map((ruta) => (
-                                <option key={ruta.id} value={ruta.id}>
-                                    {ruta.nombre} {!ruta.activo && '(Inactiva)'}
-                                </option>
+                                <label key={ruta.id} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#232323' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.rutaIds.includes(ruta.id)}
+                                        onChange={() => toggleRuta(ruta.id)}
+                                    />
+                                    <span>{ruta.nombre} {!ruta.activo && '(Inactiva)'}</span>
+                                </label>
                             ))}
-                        </select>
+                        </div>
                     )}
                 </Field>
 

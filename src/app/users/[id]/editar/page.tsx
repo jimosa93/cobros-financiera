@@ -27,6 +27,7 @@ export default function EditUserPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [rutas, setRutas] = useState<Ruta[]>([]);
+  const [rutaIds, setRutaIds] = useState<number[]>([]);
 
   useEffect(() => {
     fetch('/api/rutas').then(r => r.json()).then(data => {
@@ -50,8 +51,8 @@ export default function EditUserPage() {
           placaMoto: data.user.placaMoto || "",
           fechaTecnico: data.user.fechaTecnico ? String(data.user.fechaTecnico).slice(0, 10) : "",
           fechaSoat: data.user.fechaSoat ? String(data.user.fechaSoat).slice(0, 10) : "",
-          rutaId: data.user.rutaId?.toString() || "",
         });
+        setRutaIds(Array.isArray(data.user.rutaIds) ? data.user.rutaIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isFinite(id)) : []);
         setPermisos(Array.isArray(data.user.permisos) ? data.user.permisos : []);
       }
     }).finally(() => setLoading(false));
@@ -72,6 +73,12 @@ export default function EditUserPage() {
     );
   };
 
+  const toggleRuta = (rutaId: number) => {
+    setRutaIds((prev) => (
+      prev.includes(rutaId) ? prev.filter((id) => id !== rutaId) : [...prev, rutaId]
+    ));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(""); setSaving(true);
@@ -79,7 +86,7 @@ export default function EditUserPage() {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, permisos: form.rol === 'USUARIO' ? permisos : [] })
+        body: JSON.stringify({ ...form, permisos: form.rol === 'USUARIO' ? permisos : [], rutaIds: form.rol === 'USUARIO' ? rutaIds : [] })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
@@ -107,6 +114,22 @@ export default function EditUserPage() {
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Celular</label>
             <input name="celular" value={form.celular || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Alias</label>
+            <input name="alias" value={form.alias || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Placa Moto</label>
+            <input name="placaMoto" value={form.placaMoto || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Fecha Técnico</label>
+            <input name="fechaTecnico" value={form.fechaTecnico || ""} onChange={handleChange} type="date" style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Fecha SOAT</label>
+            <input name="fechaSoat" value={form.fechaSoat || ""} onChange={handleChange} type="date" style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Rol</label>
@@ -141,15 +164,19 @@ export default function EditUserPage() {
           )}
           {form.rol === 'USUARIO' && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Ruta Asignada</label>
-              <select name="rutaId" value={form.rutaId || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }}>
-                <option value="">Sin ruta asignada</option>
-                {rutas.map(ruta => (
-                  <option key={ruta.id} value={ruta.id}>
-                    {ruta.nombre} {!ruta.activo && '(Inactiva)'}
-                  </option>
+              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Rutas Asignadas</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: '12px 0' }}>
+                {rutas.map((ruta) => (
+                  <label key={ruta.id} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#232323' }}>
+                    <input
+                      type="checkbox"
+                      checked={rutaIds.includes(ruta.id)}
+                      onChange={() => toggleRuta(ruta.id)}
+                    />
+                    <span>{ruta.nombre} {!ruta.activo && '(Inactiva)'}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
           )}
           <div style={{ marginTop: '2rem' }}>

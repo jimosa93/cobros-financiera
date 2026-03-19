@@ -34,7 +34,6 @@ export const authOptions: NextAuthOptions = {
                     name: user.nombreCompleto,
                     email: user.email,
                     rol: normalizeRol(String(user.rol)),
-                    rutaId: user.rutaId,
                 };
             },
         }),
@@ -44,7 +43,6 @@ export const authOptions: NextAuthOptions = {
             if (token && session.user) {
                 session.user.id = token.sub || '';
                 session.user.rol = token.rol as 'ADMIN' | 'USUARIO';
-                session.user.rutaId = token.rutaId as number | null;
             }
             return session;
         },
@@ -52,7 +50,6 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.rol = (user as User).rol;
-                token.rutaId = (user as User).rutaId;
             }
             return token;
         },

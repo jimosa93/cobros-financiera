@@ -21,13 +21,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         placaMoto: true,
         fechaTecnico: true,
         fechaSoat: true,
-        rutaId: true,
         permisos: { select: { permiso: true } },
       },
     });
     if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    const rutas = await prisma.usuarioRuta.findMany({
+      where: { usuarioId: user.id },
+      select: { rutaId: true },
+    });
     const { permisos: permRows, ...rest } = user;
-    const userWithPermisos = { ...rest, permisos: (permRows ?? []).map((p) => p.permiso) };
+    const userWithPermisos = {
+      ...rest,
+      rutaIds: (rutas ?? []).map((r) => r.rutaId),
+      permisos: (permRows ?? []).map((p) => p.permiso),
+    };
     return NextResponse.json({ user: userWithPermisos });
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -42,7 +49,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const idNum = parseInt(id, 10);
     const body = await request.json();
-    const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat, rutaId, permisos } = body;
+    const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat, rutaIds, permisos } = body;
     const data: Prisma.UsuarioUpdateInput = {
       nombreCompleto,
       celular,
@@ -53,15 +60,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       fechaTecnico: fechaTecnico ? new Date(fechaTecnico) : null,
       fechaSoat: fechaSoat ? new Date(fechaSoat) : null,
     };
-    if (rol === 'USUARIO' && rutaId) {
-      data.ruta = { connect: { id: parseInt(rutaId) } };
-    } else if (rol === 'ADMIN') {
-      data.ruta = { disconnect: true };
-    }
+    const normalizedRutaIds = Array.isArray(rutaIds)
+      ? rutaIds.map((id) => Number(id)).filter((id) => Number.isFinite(id))
+      : [];
     if (password) data.password = await hash(password, 12);
     const permisoList = Array.isArray(permisos) ? (permisos as string[]) : [];
     await prisma.$transaction(async (tx) => {
       await tx.usuario.update({ where: { id: idNum }, data });
+      await tx.usuarioRuta.deleteMany({ where: { usuarioId: idNum } });
+      if (rol === 'USUARIO' && normalizedRutaIds.length > 0) {
+        await tx.usuarioRuta.createMany({
+          data: normalizedRutaIds.map((id) => ({ usuarioId: idNum, rutaId: id })),
+          skipDuplicates: true,
+        });
+      }
       await tx.usuarioPermiso.deleteMany({ where: { usuarioId: idNum } });
       if (permisoList.length > 0) {
         await tx.usuarioPermiso.createMany({
@@ -83,13 +95,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         placaMoto: true,
         fechaTecnico: true,
         fechaSoat: true,
-        rutaId: true,
         permisos: { select: { permiso: true } },
       },
     });
     if (!updated) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    const rutas = await prisma.usuarioRuta.findMany({
+      where: { usuarioId: updated.id },
+      select: { rutaId: true },
+    });
     const { permisos: permRows } = updated;
-    const userWithoutPassword = { ...updated, permisos: (permRows ?? []).map((p) => p.permiso) };
+    const userWithoutPassword = {
+      ...updated,
+      rutaIds: (rutas ?? []).map((r) => r.rutaId),
+      permisos: (permRows ?? []).map((p) => p.permiso),
+    };
     return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('Error updating user:', error);

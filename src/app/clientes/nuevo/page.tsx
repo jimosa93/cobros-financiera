@@ -5,20 +5,23 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import ClienteForm from '@/components/ClienteForm';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 export default function NuevoClientePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { can, loading: loadingPerms } = usePermissions();
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
       router.push('/login');
-    } else if (status === 'authenticated' && session?.user?.rol !== 'ADMIN') {
+    } else if (!can('CLIENTES_CREATE')) {
       router.push('/clientes');
     }
-  }, [status, session, router]);
+  }, [status, loadingPerms, session, can, router]);
 
-  if (status === 'loading') {
+  if (status === 'loading' || loadingPerms) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -31,7 +34,7 @@ export default function NuevoClientePage() {
     );
   }
 
-  if (!session || session.user.rol !== 'ADMIN') {
+  if (!session || !can('CLIENTES_CREATE')) {
     return null;
   }
 

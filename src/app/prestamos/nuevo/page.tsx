@@ -11,7 +11,6 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 interface Cliente {
   id: number;
   nombreCompleto: string;
-  rutaId: number;
 }
 
 interface Ruta {
@@ -50,7 +49,11 @@ export default function NuevoPrestamoPage() {
     const fetchRutas = async () => {
       const res = await fetch("/api/rutas");
       const data = await res.json();
-      setRutas(data.rutas || []);
+      const loadedRutas = data.rutas || [];
+      setRutas(loadedRutas);
+      if (loadedRutas.length === 1) {
+        setRutaId(String(loadedRutas[0].id));
+      }
     };
     fetchRutas().catch(console.error);
   }, [status, loadingPerms, session, can]);
@@ -69,7 +72,7 @@ export default function NuevoPrestamoPage() {
   useEffect(() => {
     if (rutaId) {
       const fetchClientes = async () => {
-        const res = await fetch(`/api/clientes?pageSize=1000&rutaId=${rutaId}`);
+        const res = await fetch(`/api/clientes?limit=1000&rutaId=${rutaId}`);
         const data = await res.json();
         setClientes(data.clientes || []);
       };

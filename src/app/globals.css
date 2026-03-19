@@ -44,7 +44,7 @@ a {
 /* Navbar responsive styles */
 .site-nav .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: center;
 }
 
@@ -214,6 +214,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.9;
 }
 
+/* Keep browser autofill visually consistent with app inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #232323;
+  caret-color: #232323;
+  -webkit-box-shadow: 0 0 0 1000px #f1f1f1 inset;
+  box-shadow: 0 0 0 1000px #f1f1f1 inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 @keyframes ds-spin {
   from {
     transform: rotate(0deg);
@@ -333,7 +350,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   text-decoration: none;
   color: inherit;
 }

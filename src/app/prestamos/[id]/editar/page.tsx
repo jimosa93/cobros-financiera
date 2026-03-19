@@ -11,6 +11,7 @@ import { Prestamo } from '@prisma/client';
 import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface Cliente { id: number; nombreCompleto: string; }
+interface Ruta { id: number; nombre: string; activo: boolean; }
 const INTERESES = [0.1, 0.2, 0.3];
 
 export default function EditarPrestamoPage() {
@@ -20,12 +21,14 @@ export default function EditarPrestamoPage() {
   const { can, loading: loadingPerms } = usePermissions();
   const [prestamo, setPrestamo] = useState<Prestamo | undefined>(undefined);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
   const [clienteId, setClienteId] = useState('');
+  const [rutaId, setRutaId] = useState('');
   const [monto, setMonto] = useState('');
   const [cuotas, setCuotas] = useState('');
   const [tasa, setTasa] = useState(INTERESES[0]);
@@ -50,9 +53,17 @@ export default function EditarPrestamoPage() {
 
     async function fetchData() {
       setLoading(true);
-      const resp1 = await fetch(`/api/prestamos/${params.id}`);
+      const [resp1, respRutas] = await Promise.all([
+        fetch(`/api/prestamos/${params.id}`),
+        fetch('/api/rutas'),
+      ]);
       const data1 = await resp1.json();
-      const resp2 = await fetch(`/api/clientes?pageSize=1000`);
+      const rutasData = await respRutas.json();
+      const loadedRutas: Ruta[] = rutasData.rutas || [];
+      setRutas(loadedRutas);
+      const currentRutaId = String(data1.prestamo?.rutaId || '');
+      setRutaId(currentRutaId);
+      const resp2 = await fetch(`/api/clientes?limit=1000&rutaId=${currentRutaId}`);
       const data2 = await resp2.json();
       setPrestamo(data1.prestamo);
       setClientes(data2.clientes || []);
@@ -65,6 +76,28 @@ export default function EditarPrestamoPage() {
     }
     fetchData();
   }, [params.id, status, loadingPerms, session, can]);
+
+  useEffect(() => {
+    if (!rutaId) return;
+    let mounted = true;
+    const fetchClientes = async () => {
+      try {
+        const resp = await fetch(`/api/clientes?limit=1000&rutaId=${rutaId}`);
+        const data = await resp.json();
+        if (!mounted) return;
+        setClientes(data.clientes || []);
+        // Only clear the selected cliente if there was one and it's not in the new list
+        if (clienteId && !data.clientes?.some((c: Cliente) => String(c.id) === clienteId)) {
+          setClienteId('');
+        }
+      } catch (e) {
+        if (!mounted) return;
+        setClientes([]);
+      }
+    };
+    fetchClientes();
+    return () => { mounted = false; };
+  }, [rutaId]);
 
   if (status === "loading" || loadingPerms || loading) {
     return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
@@ -96,6 +129,7 @@ export default function EditarPrestamoPage() {
           fechaInicio: prestamo.fechaInicio ? new Date(prestamo.fechaInicio as unknown as string).toISOString() : null,
           notas: nota,
           cobradorId: prestamo.cobradorId,
+          rutaId: parseInt(rutaId, 10),
         }),
       });
       const data = await res.json();
@@ -125,8 +159,19 @@ export default function EditarPrestamoPage() {
               }
             />
           </Field>
+          <Field label="Ruta *">
+            <Select value={rutaId} onChange={e => setRutaId(e.target.value)} required>
+              <option value="" disabled>Selecciona una ruta…</option>
+              {rutas.map(r => (
+                <option key={r.id} value={r.id}>{r.nombre}</option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Cliente *">
-            <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required>
+            <Select value={clienteId} onChange={e => setClienteId(e.target.value)} required disabled={!rutaId}>
+              <option value="" disabled>
+                {rutaId ? 'Selecciona un cliente…' : 'Primero selecciona una ruta'}
+              </option>
               {clientes.map(c => (
                 <option key={c.id} value={c.id}>{c.nombreCompleto}</option>
               ))}

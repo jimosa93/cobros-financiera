@@ -11,7 +11,6 @@ import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragEn
 import React from "react";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useSession } from 'next-auth/react';
 import Spinner from "@/components/Spinner";
 import { usePermissions } from "@/contexts/PermissionsContext";
 
@@ -91,9 +90,7 @@ function RowSortable({ p, idx, children, rowClassName }: { p: Prestamo, idx: num
 }
 
 export default function PrestamosPage() {
-  const { data: session } = useSession();
   const { can } = usePermissions();
-  const isAdmin = !!session && session.user?.rol === 'ADMIN';
   const toast = useToast();
   const { rutaSeleccionada } = useRuta();
 
@@ -117,7 +114,7 @@ export default function PrestamosPage() {
         pageSize: pageSize.toString(),
         search: query,
       });
-      if (isAdmin && rutaSeleccionada) {
+      if (rutaSeleccionada) {
         params.append('rutaId', rutaSeleccionada.toString());
       }
       const res = await fetch(`/api/prestamos?${params}`);

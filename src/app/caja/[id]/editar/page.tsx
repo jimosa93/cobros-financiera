@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { usePermissions } from '@/contexts/PermissionsContext';
 import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, ReadonlyInput, Select, Input, Textarea } from '@/components/FormControls';
@@ -16,6 +17,7 @@ interface Ruta {
 
 export default function EditCajaPage() {
   const { data: session, status } = useSession();
+  const { can, loading: loadingPerms } = usePermissions();
   const router = useRouter();
   const params = useParams();
   const id = params?.id;
@@ -49,11 +51,15 @@ export default function EditCajaPage() {
   }, []);
 
   useEffect(() => {
-    if (status === 'loading') {
+    if (status === 'loading' || loadingPerms) {
       setLoading(true);
       return;
     }
-    if (!session || session.user.rol !== 'ADMIN') {
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('CAJA_UPDATE')) {
       router.replace('/');
       return;
     }

@@ -21,7 +21,7 @@ interface Ruta {
   fechaCreacion: string;
   usuarios: Usuario[];
   _count: {
-    clientes: number;
+    clienteRutas: number;
     prestamos: number;
   };
 }
@@ -49,27 +49,6 @@ export default function RutaDetailPage() {
     }
   }, [status, loadingPerms, session, can, router]);
 
-  if (status === 'loading' || loadingPerms) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        Cargando...
-      </div>
-    );
-  }
-
-  if (!session || !can('RUTAS_READ', 'RUTAS_UPDATE', 'RUTAS_DELETE')) return null;
-
-  useEffect(() => {
-    if (id) {
-      fetchRuta();
-    }
-  }, [id, session, can]);
-
   const fetchRuta = async () => {
     try {
       setLoading(true);
@@ -86,6 +65,28 @@ export default function RutaDetailPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (id && session && can('RUTAS_READ', 'RUTAS_UPDATE', 'RUTAS_DELETE')) {
+      fetchRuta();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, session, can]);
+
+  if (status === 'loading' || loadingPerms) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        Cargando...
+      </div>
+    );
+  }
+
+  if (!session || !can('RUTAS_READ', 'RUTAS_UPDATE', 'RUTAS_DELETE')) return null;
 
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +132,7 @@ export default function RutaDetailPage() {
     if (!ruta) return;
     if (!can('RUTAS_DELETE')) return;
 
-    if (ruta._count.clientes > 0 || ruta._count.prestamos > 0 || ruta.usuarios.length > 0) {
+    if (ruta._count.clienteRutas > 0 || ruta._count.prestamos > 0 || ruta.usuarios.length > 0) {
       alert('No se puede eliminar una ruta con clientes, préstamos o usuarios asociados. Desactívala en su lugar.');
       return;
     }
@@ -335,7 +336,7 @@ export default function RutaDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
             <div style={{ backgroundColor: '#e3f2fd', borderRadius: '8px', padding: '1.5rem' }}>
               <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Clientes</p>
-              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1976d2' }}>{ruta._count.clientes}</p>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1976d2' }}>{ruta._count.clienteRutas}</p>
             </div>
             <div style={{ backgroundColor: '#f3e5f5', borderRadius: '8px', padding: '1.5rem' }}>
               <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Préstamos</p>

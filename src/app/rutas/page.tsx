@@ -13,9 +13,9 @@ interface Ruta {
   activo: boolean;
   fechaCreacion: string;
   _count: {
-    clientes: number;
+    clienteRutas: number;
     prestamos: number;
-    usuarios: number;
+    usuarioRutas: number;
   };
 }
 
@@ -217,7 +217,7 @@ export default function RutasPage() {
                   <div style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                       <span style={{ color: '#666' }}>Clientes:</span>
-                      <span style={{ fontWeight: '600', color: '#333' }}>{ruta._count.clientes}</span>
+                      <span style={{ fontWeight: '600', color: '#333' }}>{ruta._count.clienteRutas}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                       <span style={{ color: '#666' }}>Préstamos:</span>
@@ -225,7 +225,7 @@ export default function RutasPage() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                       <span style={{ color: '#666' }}>Cobradores:</span>
-                      <span style={{ fontWeight: '600', color: '#333' }}>{ruta._count.usuarios}</span>
+                      <span style={{ fontWeight: '600', color: '#333' }}>{ruta._count.usuarioRutas}</span>
                     </div>
                   </div>
 

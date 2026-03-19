@@ -8,6 +8,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const { id } = await params;
     const idNum = parseInt(id, 10);
     const prestamo = await prisma.prestamo.findUnique({
@@ -16,6 +20,12 @@ export async function GET(
     });
     if (!prestamo) {
       return NextResponse.json({ error: 'Préstamo no encontrado' }, { status: 404 });
+    }
+    if (user.rol !== 'ADMIN') {
+      const userRutaIds = Array.isArray(user.rutaIds) ? user.rutaIds : [];
+      if (!userRutaIds.includes(prestamo.rutaId)) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      }
     }
     return NextResponse.json({ prestamo });
   } catch (error) {
@@ -31,13 +41,46 @@ export async function PUT(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.rol !== 'ADMIN') {
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+    const permisoRows = await prisma.usuarioPermiso.findMany({
+      where: { usuarioId: user.id },
+      select: { permiso: true },
+    });
+    const permisos = new Set(permisoRows.map((p) => String(p.permiso)));
+    const canUpdate = user.rol === 'ADMIN' || permisos.has('PRESTAMOS_UPDATE');
+    if (!canUpdate) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
     const { id } = await params;
     const idNum = parseInt(id, 10);
+    const existingPrestamo = await prisma.prestamo.findUnique({ where: { id: idNum }, select: { rutaId: true } });
+    if (!existingPrestamo) {
+      return NextResponse.json({ error: 'Préstamo no encontrado' }, { status: 404 });
+    }
     const body = await request.json();
-    const { clienteId, montoPrestado, tasa, cuotas, fechaInicio, notas, cobradorId } = body;
+    const { clienteId, montoPrestado, tasa, cuotas, fechaInicio, notas, cobradorId, rutaId } = body;
+    const rutaNum = Number(rutaId);
+    if (!rutaNum) {
+      return NextResponse.json({ error: 'La ruta es requerida' }, { status: 400 });
+    }
+    if (user.rol !== 'ADMIN') {
+      const userRutaIds = Array.isArray(user.rutaIds) ? user.rutaIds : [];
+      if (!userRutaIds.includes(existingPrestamo.rutaId)) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      }
+      if (!userRutaIds.includes(rutaNum)) {
+        return NextResponse.json({ error: 'Ruta no permitida para tu usuario' }, { status: 400 });
+      }
+    }
+    const clienteRuta = await prisma.clienteRuta.findFirst({
+      where: { clienteId: Number(clienteId), rutaId: rutaNum },
+      select: { clienteId: true },
+    });
+    if (!clienteRuta) {
+      return NextResponse.json({ error: 'El cliente no está asignado a la ruta seleccionada' }, { status: 400 });
+    }
     const prestamo = await prisma.prestamo.update({
       where: { id: idNum },
       data: {
@@ -48,6 +91,7 @@ export async function PUT(
         fechaInicio: fechaInicio ? new Date(fechaInicio) : undefined,
         notas: notas || null,
         cobradorId,
+        rutaId: rutaNum,
       },
     });
     return NextResponse.json({ prestamo });

@@ -15,12 +15,10 @@ export async function GET(request: NextRequest) {
     const endParam = searchParams.get('end');
     const rutaIdParam = searchParams.get('rutaId');
 
-    let rutaId: number | null = null;
-    if (user.rol === 'USUARIO' && user.rutaId) {
-      rutaId = user.rutaId;
-    } else if (user.rol === 'ADMIN' && rutaIdParam) {
-      rutaId = parseInt(rutaIdParam);
-    }
+    const userRutaIds = Array.isArray(user.rutaIds) ? user.rutaIds : [];
+    const rutaFilter = user.rol === 'USUARIO'
+      ? (userRutaIds.length > 0 ? { in: userRutaIds } : null)
+      : (rutaIdParam ? parseInt(rutaIdParam) : null);
 
     // If client provided explicit start/end ISO instants, support both single-day and multi-day ranges.
     if (startParam && endParam) {
@@ -29,14 +27,14 @@ export async function GET(request: NextRequest) {
       const prevPrestadoAgg = await prisma.prestamo.aggregate({
         where: {
           fechaInicio: { lt: startDate },
-          ...(rutaId ? { rutaId } : {})
+          ...(rutaFilter ? { rutaId: rutaFilter } : {})
         },
         _sum: { montoPrestado: true },
       });
       const prevCobradoAgg = await prisma.abono.aggregate({
         where: {
           fecha: { lt: startDate },
-          ...(rutaId ? { prestamo: { rutaId } } : {})
+          ...(rutaFilter ? { prestamo: { rutaId: rutaFilter } } : {})
         },
         _sum: { monto: true },
       });
@@ -44,7 +42,7 @@ export async function GET(request: NextRequest) {
         where: {
           fecha: { lt: startDate },
           tipo: 'ENTRADA',
-          ...(rutaId ? { rutaId } : {})
+          ...(rutaFilter ? { rutaId: rutaFilter } : {})
         },
         _sum: { monto: true },
       });
@@ -52,7 +50,7 @@ export async function GET(request: NextRequest) {
         where: {
           fecha: { lt: startDate },
           tipo: 'SALIDA',
-          ...(rutaId ? { rutaId } : {})
+          ...(rutaFilter ? { rutaId: rutaFilter } : {})
         },
         _sum: { monto: true },
       });
@@ -60,7 +58,7 @@ export async function GET(request: NextRequest) {
         where: {
           fecha: { lt: startDate },
           tipo: 'GASTO',
-          ...(rutaId ? { rutaId } : {})
+          ...(rutaFilter ? { rutaId: rutaFilter } : {})
         },
         _sum: { monto: true },
       });
@@ -68,7 +66,7 @@ export async function GET(request: NextRequest) {
         where: {
           fecha: { lt: startDate },
           tipo: 'ENTRADA_RUTA',
-          ...(rutaId ? { rutaId } : {})
+          ...(rutaFilter ? { rutaId: rutaFilter } : {})
         },
         _sum: { monto: true },
       });
@@ -76,7 +74,7 @@ export async function GET(request: NextRequest) {
         where: {
           fecha: { lt: startDate },
           tipo: 'SALIDA_RUTA',
-          ...(rutaId ? { rutaId } : {})
+          ...(rutaFilter ? { rutaId: rutaFilter } : {})
         },
         _sum: { monto: true },
       });
@@ -84,9 +82,10 @@ export async function GET(request: NextRequest) {
       let prevCajaFin = (Number(prevCobradoAgg._sum.monto ?? 0) + Number(prevEntradasAgg._sum.monto ?? 0) + Number(prevEntradasRutaAgg._sum.monto ?? 0))
         - (Number(prevPrestadoAgg._sum.montoPrestado ?? 0) + Number(prevSalidasAgg._sum.monto ?? 0) + Number(prevGastosAgg._sum.monto ?? 0) + Number(prevSalidasRutaAgg._sum.monto ?? 0));
 
-      const rutaFilter = rutaId ? `AND p."rutaId" = ${rutaId}` : '';
-      const rutaFilterAbono = rutaId ? `AND pr."rutaId" = ${rutaId}` : '';
-      const rutaFilterCaja = rutaId ? `AND c."rutaId" = ${rutaId}` : '';
+      const rawRutaSingleId = typeof rutaFilter === 'number' ? rutaFilter : null;
+      const rutaFilterSql = rawRutaSingleId ? `AND p."rutaId" = ${rawRutaSingleId}` : '';
+      const rutaFilterAbono = rawRutaSingleId ? `AND pr."rutaId" = ${rawRutaSingleId}` : '';
+      const rutaFilterCaja = rawRutaSingleId ? `AND c."rutaId" = ${rawRutaSingleId}` : '';
 
       const perDayRows: Array<{
         day: Date;
@@ -103,7 +102,7 @@ export async function GET(request: NextRequest) {
         )
         SELECT
           days.day::date as day,
-          COALESCE((SELECT SUM(p."montoPrestado") FROM "Prestamo" p WHERE p."fechaInicio" >= days.day AND p."fechaInicio" < (days.day + interval '1 day') ${Prisma.raw(rutaFilter)}),0)::text as prestado,
+          COALESCE((SELECT SUM(p."montoPrestado") FROM "Prestamo" p WHERE p."fechaInicio" >= days.day AND p."fechaInicio" < (days.day + interval '1 day') ${Prisma.raw(rutaFilterSql)}),0)::text as prestado,
           COALESCE((SELECT SUM(a.monto) FROM "Abono" a JOIN "Prestamo" pr ON a."prestamoId" = pr.id WHERE a.fecha >= days.day AND a.fecha < (days.day + interval '1 day') ${Prisma.raw(rutaFilterAbono)}),0)::text as cobrado,
           COALESCE((SELECT SUM(c.monto) FROM "Caja" c WHERE c.fecha >= days.day AND c.fecha < (days.day + interval '1 day') AND c.tipo = 'ENTRADA' ${Prisma.raw(rutaFilterCaja)}),0)::text as entradas,
           COALESCE((SELECT SUM(c.monto) FROM "Caja" c WHERE c.fecha >= days.day AND c.fecha < (days.day + interval '1 day') AND c.tipo = 'SALIDA' ${Prisma.raw(rutaFilterCaja)}),0)::text as salidas,
@@ -157,9 +156,10 @@ export async function GET(request: NextRequest) {
 
     const ref = searchParams.get('ref');
 
-    const rutaFilter = rutaId ? `AND p."rutaId" = ${rutaId}` : '';
-    const rutaFilterAbono = rutaId ? `AND pr."rutaId" = ${rutaId}` : '';
-    const rutaFilterCaja = rutaId ? `AND c."rutaId" = ${rutaId}` : '';
+    const rawRutaSingleId = typeof rutaFilter === 'number' ? rutaFilter : null;
+    const rutaFilterSql = rawRutaSingleId ? `AND p."rutaId" = ${rawRutaSingleId}` : '';
+    const rutaFilterAbono = rawRutaSingleId ? `AND pr."rutaId" = ${rawRutaSingleId}` : '';
+    const rutaFilterCaja = rawRutaSingleId ? `AND c."rutaId" = ${rawRutaSingleId}` : '';
 
     const rows: Array<{
       day: Date;
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
       )
       SELECT
         days.day::date as day,
-        COALESCE((SELECT SUM(p."montoPrestado") FROM "Prestamo" p WHERE date_trunc('day', p."fechaInicio") = days.day ${Prisma.raw(rutaFilter)}),0)::text as prestado,
+        COALESCE((SELECT SUM(p."montoPrestado") FROM "Prestamo" p WHERE date_trunc('day', p."fechaInicio") = days.day ${Prisma.raw(rutaFilterSql)}),0)::text as prestado,
         COALESCE((SELECT SUM(a.monto) FROM "Abono" a JOIN "Prestamo" pr ON a."prestamoId" = pr.id WHERE date_trunc('day', a.fecha) = days.day ${Prisma.raw(rutaFilterAbono)}),0)::text as cobrado,
         COALESCE((SELECT SUM(c.monto) FROM "Caja" c WHERE date_trunc('day', c.fecha) = days.day AND c.tipo = 'ENTRADA' ${Prisma.raw(rutaFilterCaja)}),0)::text as entradas,
         COALESCE((SELECT SUM(c.monto) FROM "Caja" c WHERE date_trunc('day', c.fecha) = days.day AND c.tipo = 'SALIDA' ${Prisma.raw(rutaFilterCaja)}),0)::text as salidas,

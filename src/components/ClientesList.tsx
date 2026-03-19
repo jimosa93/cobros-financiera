@@ -59,7 +59,7 @@ export default function ClientesList() {
       if (searchTerm) {
         params.append('search', searchTerm);
       }
-      if (session?.user.rol === 'ADMIN' && rutaSeleccionada) {
+      if (rutaSeleccionada) {
         params.append('rutaId', rutaSeleccionada.toString());
       }
 

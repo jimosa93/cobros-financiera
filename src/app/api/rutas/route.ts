@@ -15,23 +15,20 @@ async function getAuthUser(request: NextRequest) {
     select: {
       id: true,
       rol: true,
-      rutaId: true,
       permisos: { select: { permiso: true } },
     },
   });
   if (!user) return null;
+  const userRutas = await prisma.usuarioRuta.findMany({
+    where: { usuarioId: user.id },
+    select: { rutaId: true },
+  });
   return {
     id: user.id,
     rol: user.rol as Rol,
-    rutaId: user.rutaId,
+    rutaIds: userRutas.map((r) => r.rutaId),
     permisos: (user.permisos ?? []).map((p) => String(p.permiso)),
   };
-}
-
-function hasAnyRutaPermiso(permisos: string[]) {
-  return permisos.some((p) =>
-    p === 'RUTAS_READ' || p === 'RUTAS_CREATE' || p === 'RUTAS_UPDATE' || p === 'RUTAS_DELETE'
-  );
 }
 
 export async function GET(request: NextRequest) {
@@ -47,16 +44,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
-    // ADMIN: see all routes (optionally inactive). Non-admin: requires RUTAS_READ to list routes.
+    // Non-admin users: return only assigned routes (used by navbar selector and forms).
     if (user.rol !== 'ADMIN') {
-      if (!user.permisos.includes('RUTAS_READ') && !hasAnyRutaPermiso(user.permisos)) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      if (user.rutaIds.length === 0) {
+        return NextResponse.json({ rutas: [] });
       }
       const rutas = await prisma.ruta.findMany({
-        where: includeInactive ? {} : { activo: true },
+        where: {
+          ...(includeInactive ? {} : { activo: true }),
+          id: { in: user.rutaIds },
+        },
         orderBy: { fechaCreacion: 'desc' },
         include: {
-          _count: { select: { clientes: true, prestamos: true, usuarios: true } },
+          _count: { select: { clienteRutas: true, prestamos: true, usuarioRutas: true } },
         },
       });
       return NextResponse.json({ rutas });
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       where: includeInactive ? {} : { activo: true },
       orderBy: { fechaCreacion: 'desc' },
       include: {
-        _count: { select: { clientes: true, prestamos: true, usuarios: true } },
+        _count: { select: { clienteRutas: true, prestamos: true, usuarioRutas: true } },
       },
     });
 

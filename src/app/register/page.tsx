@@ -8,6 +8,7 @@ import FormCard from '@/components/FormCard';
 import { Field, Input, Select, errorStyle } from '@/components/FormControls';
 
 type PermissionGroup = { label: string; permisos: { value: string; label: string }[] };
+type Ruta = { id: number; nombre: string; activo: boolean };
 
 const DEFAULT_PERMISOS = ['CLIENTES_READ', 'PRESTAMOS_READ', 'ABONOS_READ', 'ABONOS_CREATE'];
 
@@ -30,11 +31,17 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [rutas, setRutas] = useState<Ruta[]>([]);
+    const [rutaIds, setRutaIds] = useState<number[]>([]);
 
     useEffect(() => {
         fetch('/api/permissions')
             .then((r) => r.json())
             .then((data) => data.groups && setPermissionGroups(data.groups))
+            .catch(() => { });
+        fetch('/api/rutas')
+            .then((r) => r.json())
+            .then((data) => data.rutas && setRutas(data.rutas))
             .catch(() => { });
     }, []);
 
@@ -80,6 +87,7 @@ export default function RegisterPage() {
                     alias: formData.alias || null,
                     placaMoto: formData.placaMoto || null,
                     permisos: formData.rol === 'USUARIO' ? permisos : [],
+                    rutaIds: formData.rol === 'USUARIO' ? rutaIds : [],
                 }),
             });
 
@@ -101,6 +109,7 @@ export default function RegisterPage() {
                     fechaSoat: '',
                 });
                 setPermisos(DEFAULT_PERMISOS);
+                setRutaIds([]);
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
                 router.push('/users');
@@ -124,6 +133,12 @@ export default function RegisterPage() {
         setPermisos((prev) =>
             prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
         );
+    };
+
+    const toggleRuta = (rutaId: number) => {
+        setRutaIds((prev) => (
+            prev.includes(rutaId) ? prev.filter((id) => id !== rutaId) : [...prev, rutaId]
+        ));
     };
 
     return (
@@ -168,6 +183,22 @@ export default function RegisterPage() {
                                             ))}
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+                        </Field>
+                    )}
+                    {formData.rol === 'USUARIO' && (
+                        <Field label="Rutas asignadas">
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: '12px 0' }}>
+                                {rutas.map((ruta) => (
+                                    <label key={ruta.id} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#232323' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={rutaIds.includes(ruta.id)}
+                                            onChange={() => toggleRuta(ruta.id)}
+                                        />
+                                        <span>{ruta.nombre} {!ruta.activo && '(Inactiva)'}</span>
+                                    </label>
                                 ))}
                             </div>
                         </Field>

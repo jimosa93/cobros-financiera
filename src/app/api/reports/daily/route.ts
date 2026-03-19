@@ -22,12 +22,10 @@ export async function GET(request: NextRequest) {
     const dateParam = searchParams.get('date') || undefined;
     const rutaIdParam = searchParams.get('rutaId');
 
-    let rutaId: number | null = null;
-    if (user.rol === 'USUARIO' && user.rutaId) {
-      rutaId = user.rutaId;
-    } else if (user.rol === 'ADMIN' && rutaIdParam) {
-      rutaId = parseInt(rutaIdParam);
-    }
+    const userRutaIds = Array.isArray(user.rutaIds) ? user.rutaIds : [];
+    const rutaFilter = user.rol === 'USUARIO'
+      ? (userRutaIds.length > 0 ? { in: userRutaIds } : null)
+      : (rutaIdParam ? parseInt(rutaIdParam) : null);
 
     let start: Date;
     let end: Date;
@@ -43,7 +41,7 @@ export async function GET(request: NextRequest) {
     const totalAbonos = await prisma.abono.aggregate({
       where: {
         fecha: { gte: start, lt: end },
-        ...(rutaId ? { prestamo: { rutaId } } : {})
+        ...(rutaFilter ? { prestamo: { rutaId: rutaFilter } } : {})
       },
       _sum: { monto: true },
       _count: { id: true },
@@ -53,7 +51,7 @@ export async function GET(request: NextRequest) {
       by: ['cobradorId'],
       where: {
         fecha: { gte: start, lt: end },
-        ...(rutaId ? { prestamo: { rutaId } } : {})
+        ...(rutaFilter ? { prestamo: { rutaId: rutaFilter } } : {})
       },
       _sum: { monto: true },
       _count: { id: true },
@@ -76,7 +74,7 @@ export async function GET(request: NextRequest) {
     const prestamosAgg = await prisma.prestamo.aggregate({
       where: {
         fechaInicio: { gte: start, lt: end },
-        ...(rutaId ? { rutaId } : {})
+        ...(rutaFilter ? { rutaId: rutaFilter } : {})
       },
       _count: { id: true },
       _sum: { montoPrestado: true },
@@ -88,7 +86,7 @@ export async function GET(request: NextRequest) {
       by: ['tipo'],
       where: {
         fecha: { gte: start, lt: end },
-        ...(rutaId ? { rutaId } : {})
+        ...(rutaFilter ? { rutaId: rutaFilter } : {})
       },
       _sum: { monto: true },
       _count: { id: true },

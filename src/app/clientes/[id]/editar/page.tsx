@@ -6,27 +6,30 @@ import { useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import ClienteForm from '@/components/ClienteForm';
 import Spinner from '@/components/Spinner';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 export default function EditarClientePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
+  const { can, loading: loadingPerms } = usePermissions();
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
       router.push('/login');
-    } else if (status === 'authenticated' && session?.user?.rol !== 'ADMIN') {
+    } else if (!can('CLIENTES_UPDATE')) {
       router.push('/clientes');
     }
-  }, [status, session, router]);
+  }, [status, loadingPerms, session, can, router]);
 
-  if (status === 'loading') {
+  if (status === 'loading' || loadingPerms) {
     return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
       <Spinner size={40} />
     </div>;
   }
 
-  if (!session || session.user.rol !== 'ADMIN') {
+  if (!session || !can('CLIENTES_UPDATE')) {
     return null;
   }
 

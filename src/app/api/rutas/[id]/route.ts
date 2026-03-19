@@ -10,13 +10,17 @@ async function getAuthUser(request: NextRequest) {
   if (!Number.isFinite(id)) return null;
   const user = await prisma.usuario.findUnique({
     where: { id },
-    select: { id: true, rol: true, rutaId: true, permisos: { select: { permiso: true } } },
+    select: { id: true, rol: true, permisos: { select: { permiso: true } } },
   });
   if (!user) return null;
+  const userRutas = await prisma.usuarioRuta.findMany({
+    where: { usuarioId: user.id },
+    select: { rutaId: true },
+  });
   return {
     id: user.id,
     rol: user.rol as Rol,
-    rutaId: user.rutaId,
+    rutaIds: userRutas.map((r) => r.rutaId),
     permisos: (user.permisos ?? []).map((p) => String(p.permiso)),
   };
 }
@@ -40,17 +44,21 @@ export async function GET(
     const ruta = await prisma.ruta.findUnique({
       where: { id: idNum },
       include: {
-        usuarios: {
+        usuarioRutas: {
           select: {
-            id: true,
-            nombreCompleto: true,
-            email: true,
-            rol: true,
+            usuario: {
+              select: {
+                id: true,
+                nombreCompleto: true,
+                email: true,
+                rol: true,
+              },
+            },
           },
         },
         _count: {
           select: {
-            clientes: true,
+            clienteRutas: true,
             prestamos: true,
           },
         },
@@ -64,7 +72,11 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ ruta });
+    const rutaWithUsuarios = {
+      ...ruta,
+      usuarios: ruta.usuarioRutas.map((ur) => ur.usuario),
+    };
+    return NextResponse.json({ ruta: rutaWithUsuarios });
   } catch (error) {
     console.error('Error fetching ruta:', error);
     return NextResponse.json(
@@ -137,15 +149,15 @@ export async function DELETE(
       select: {
         _count: {
           select: {
-            clientes: true,
+            clienteRutas: true,
             prestamos: true,
-            usuarios: true,
+            usuarioRutas: true,
           },
         },
       },
     });
 
-    if (counts && (counts._count.clientes > 0 || counts._count.prestamos > 0 || counts._count.usuarios > 0)) {
+    if (counts && (counts._count.clienteRutas > 0 || counts._count.prestamos > 0 || counts._count.usuarioRutas > 0)) {
       return NextResponse.json(
         { error: 'No se puede eliminar una ruta con clientes, préstamos o usuarios asociados. Desactívala en su lugar.' },
         { status: 400 }

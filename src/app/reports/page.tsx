@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { useRuta } from '@/contexts/RutaContext';
 import { RutaBanner } from '@/components/RutaBanner';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface CajaToday {
   fecha: string;
@@ -25,9 +26,25 @@ export default function ReportsIndex() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { rutaSeleccionada } = useRuta();
+  const { can, loading: loadingPerms } = usePermissions();
   const [today, setToday] = useState<CajaToday | null>(null);
   const [prevCajaFin, setPrevCajaFin] = useState<number>(0);
+
+  const canAccessReports = !!session && can('REPORTES_VIEW');
+
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('REPORTES_VIEW')) {
+      router.replace('/');
+    }
+  }, [status, loadingPerms, session, can, router]);
+
+  useEffect(() => {
+    if (!canAccessReports) return;
     (async () => {
       try {
         const now = new Date();
@@ -65,13 +82,10 @@ export default function ReportsIndex() {
         setToday(null);
       }
     })();
-  }, [rutaSeleccionada]);
+  }, [rutaSeleccionada, canAccessReports]);
 
-  if (status === 'loading') return null;
-  if (!session || session.user?.rol !== 'ADMIN') {
-    router.replace('/');
-    return null;
-  }
+  if (status === 'loading' || loadingPerms) return null;
+  if (!canAccessReports) return null;
 
   return (
     <div className="app-bg">
@@ -79,7 +93,7 @@ export default function ReportsIndex() {
       <main className="app-main">
         <RutaBanner />
         <h1 className="page-title">Reportes</h1>
-        <p style={{ color: '#666', marginTop: 8, marginBottom: 12 }}>Accede a reportes del sistema. Solo administradores.</p>
+        <p style={{ color: '#666', marginTop: 8, marginBottom: 12 }}>Accede a reportes del sistema según tus permisos.</p>
         <div className="dashboard-grid">
           <Link href="/reports/daily">
             <div className="dashboard-card">

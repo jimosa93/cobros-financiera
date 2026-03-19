@@ -37,7 +37,7 @@ export default function AbonosPage() {
         pageSize: pageSize.toString(),
         search: query,
       });
-      if (isAdmin && rutaSeleccionada) {
+      if (rutaSeleccionada) {
         params.append('rutaId', rutaSeleccionada.toString());
       }
       const res = await fetch(`/api/abonos?${params}`);

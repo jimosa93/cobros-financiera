@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, ReadonlyInput, Select, Input, Textarea } from '@/components/FormControls';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface Ruta {
   id: number;
@@ -16,6 +17,7 @@ interface Ruta {
 export default function NuevoCajaPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { can, loading: loadingPerms } = usePermissions();
   const [tipo, setTipo] = useState('ENTRADA');
   const [monto, setMonto] = useState('');
   const [nota, setNota] = useState('');
@@ -28,8 +30,12 @@ export default function NuevoCajaPage() {
   const fechaDisplay = new Date().toLocaleDateString('es-ES');
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || session.user.rol !== 'ADMIN') {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('CAJA_CREATE')) {
       router.replace('/');
     }
   }, [session, status, router]);
@@ -40,7 +46,9 @@ export default function NuevoCajaPage() {
         const res = await fetch('/api/rutas');
         if (res.ok) {
           const data = await res.json();
-          setRutas(data.rutas || []);
+          const loaded = data.rutas || [];
+          setRutas(loaded);
+          if (loaded.length === 1) setRutaId(String(loaded[0].id));
         }
       } catch (error) {
         console.error('Error loading rutas:', error);
@@ -101,12 +109,12 @@ export default function NuevoCajaPage() {
             <Input value={monto} onChange={(e) => setMonto(e.target.value.replace(/[^\d.]/g, ''))} type="number" min={0} required />
           </Field>
 
-          <Field label="Ruta (Opcional)">
+          <Field label="Ruta *">
             {loadingRutas ? (
               <div style={{ padding: '0.5rem', color: '#666' }}>Cargando rutas...</div>
             ) : (
-              <Select value={rutaId} onChange={(e) => setRutaId(e.target.value)}>
-                <option value="">Sin ruta específica</option>
+              <Select value={rutaId} onChange={(e) => setRutaId(e.target.value)} required>
+                <option value="" disabled>Selecciona una ruta</option>
                 {rutas.map((ruta) => (
                   <option key={ruta.id} value={ruta.id}>
                     {ruta.nombre}

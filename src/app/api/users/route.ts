@@ -20,7 +20,6 @@ async function getAdminUser(request: NextRequest) {
             email: true,
             rol: true,
             alias: true,
-            rutaId: true,
         },
     });
     return user ?? null;
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat, permisos } = body;
+        const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat, permisos, rutaIds } = body;
 
         if (!nombreCompleto || !celular || !email || !password || !rol) {
             return NextResponse.json(
@@ -61,6 +60,10 @@ export async function POST(request: NextRequest) {
 
         const permisoList = Array.isArray(permisos) ? permisos as string[] : (rol === 'USUARIO' ? DEFAULT_USUARIO_PERMISOS : []);
 
+        const normalizedRutaIds = Array.isArray(rutaIds)
+            ? rutaIds.map((id) => Number(id)).filter((id) => Number.isFinite(id))
+            : [];
+
         const newUser = await prisma.$transaction(async (tx) => {
             const u = await tx.usuario.create({
                 data: {
@@ -77,6 +80,12 @@ export async function POST(request: NextRequest) {
                     fechaSoat: fechaSoat ? new Date(fechaSoat) : null,
                 },
             });
+            if (rol === 'USUARIO' && normalizedRutaIds.length > 0) {
+                await tx.usuarioRuta.createMany({
+                    data: normalizedRutaIds.map((id) => ({ usuarioId: u.id, rutaId: id })),
+                    skipDuplicates: true,
+                });
+            }
             if (permisoList.length > 0) {
                 await tx.usuarioPermiso.createMany({
                     data: permisoList.map((p) => ({ usuarioId: u.id, permiso: p as Permiso })),
