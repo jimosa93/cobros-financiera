@@ -10,11 +10,15 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useToast } from '@/components/Toast';
 import Spinner from "@/components/Spinner";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 export default function AbonosPage() {
   const { data: session } = useSession();
+  const { can } = usePermissions();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
-  const canCreateAbono = isAdmin || (!!session && session.user?.rol === 'COBRADOR');
+  const canCreateAbono = can('ABONOS_CREATE');
+  const canEditAbono = can('ABONOS_UPDATE');
+  const canDeleteAbono = can('ABONOS_DELETE');
   const router = useRouter();
   const toast = useToast();
   const { rutaSeleccionada } = useRuta();
@@ -98,10 +102,10 @@ export default function AbonosPage() {
                     <td className="table-cell">{a.cobrador?.nombreCompleto || '-'}</td>
                     <td className="table-cell">{a.notas || '-'}</td>
                     <td className="table-cell" style={{ background: 'none' }}>
-                      {isAdmin ? (
+                      {(canEditAbono || canDeleteAbono) ? (
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                          <IconButton type="edit" onClick={() => router.push(`/abonos/${a.id}/editar`)} />
-                          <IconButton type="delete" onClick={() => eliminar(a.id)} />
+                          {canEditAbono && <IconButton type="edit" onClick={() => router.push(`/abonos/${a.id}/editar`)} />}
+                          {canDeleteAbono && <IconButton type="delete" onClick={() => eliminar(a.id)} />}
                         </div>
                       ) : '-'}
                     </td>

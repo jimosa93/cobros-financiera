@@ -1,20 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
+import { type Rol } from '@prisma/client';
+
+async function getAuthUser(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.sub) return null;
+  const id = parseInt(token.sub, 10);
+  if (!Number.isFinite(id)) return null;
+  const user = await prisma.usuario.findUnique({
+    where: { id },
+    select: { id: true, rol: true, rutaId: true, permisos: { select: { permiso: true } } },
+  });
+  if (!user) return null;
+  return {
+    id: user.id,
+    rol: user.rol as Rol,
+    rutaId: user.rutaId,
+    permisos: (user.permisos ?? []).map((p) => String(p.permiso)),
+  };
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const user = await getAuthUser(request);
     const { id } = await params;
     const idNum = parseInt(id, 10);
     if (!user) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    // Allow admins or the cobrador assigned to this ruta to fetch it
-    if (user.rol !== 'ADMIN' && user.rutaId !== idNum) {
+    // Allow admins. Non-admins must have RUTAS_READ.
+    if (user.rol !== 'ADMIN' && !user.permisos.includes('RUTAS_READ')) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -60,12 +79,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-    if (!user || user.rol !== 'ADMIN') {
+    const user = await getAuthUser(request);
+    if (!user) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
+    }
+    if (user.rol !== 'ADMIN' && !user.permisos.includes('RUTAS_UPDATE')) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -96,12 +118,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-    if (!user || user.rol !== 'ADMIN') {
+    const user = await getAuthUser(request);
+    if (!user) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
+    }
+    if (user.rol !== 'ADMIN' && !user.permisos.includes('RUTAS_DELETE')) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const { id } = await params;

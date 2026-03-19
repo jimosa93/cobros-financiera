@@ -10,7 +10,7 @@ export async function getSession() {
 export async function getCurrentUser() {
   const session = await getSession();
   if (!session?.user?.email) return null;
-  
+
   const user = await prisma.usuario.findUnique({
     where: { email: session.user.email },
     select: {
@@ -29,6 +29,6 @@ export async function getCurrentUser() {
       },
     },
   });
-  
+
   return user;
 }

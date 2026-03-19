@@ -257,4 +257,3 @@ Resumen de endpoints existentes:
 - **Creación de usuarios**: se hace desde `/register` (solo `ADMIN`), guarda `password` hasheado.
 - **Creación de clientes y préstamos**: solo `ADMIN`; `COBRADOR` consume listados filtrados por su ruta.
 - **Registro de abonos**: cualquier usuario autenticado puede registrar abonos; al crear un abono se recalcula el total abonado del préstamo y, si alcanza el total a pagar, el préstamo pasa a `INACTIVO`.
-

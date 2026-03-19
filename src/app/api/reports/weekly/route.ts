@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const rutaIdParam = searchParams.get('rutaId');
 
     let rutaId: number | null = null;
-    if (user.rol === 'COBRADOR' && user.rutaId) {
+    if (user.rol === 'USUARIO' && user.rutaId) {
       rutaId = user.rutaId;
     } else if (user.rol === 'ADMIN' && rutaIdParam) {
       rutaId = parseInt(rutaIdParam);
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     const totalAbonos = await prisma.abono.aggregate({
-      where: { 
+      where: {
         fecha: { gte: start, lt: end },
         ...(rutaId ? { prestamo: { rutaId } } : {})
       },
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     const byCobrador = await prisma.abono.groupBy({
       by: ['cobradorId'],
-      where: { 
+      where: {
         fecha: { gte: start, lt: end },
         ...(rutaId ? { prestamo: { rutaId } } : {})
       },
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     }));
 
     const prestamosAgg = await prisma.prestamo.aggregate({
-      where: { 
+      where: {
         fechaInicio: { gte: start, lt: end },
         ...(rutaId ? { rutaId } : {})
       },
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     const prestamosSum = prestamosAgg._sum.montoPrestado ? String(prestamosAgg._sum.montoPrestado) : "0";
 
     const abonosList = await prisma.abono.findMany({
-      where: { 
+      where: {
         fecha: { gte: start, lt: end },
         ...(rutaId ? { prestamo: { rutaId } } : {})
       },
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     const cajaByTipo = await prisma.caja.groupBy({
       by: ['tipo'],
-      where: { 
+      where: {
         fecha: { gte: start, lt: end },
         ...(rutaId ? { rutaId } : {})
       },

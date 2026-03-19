@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useRuta } from '@/contexts/RutaContext';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 function NavLinks() {
     const { data: session } = useSession();
+    const { can } = usePermissions();
     const pathname = usePathname();
     const isActive = (path: string) => pathname === path;
     return (
@@ -23,6 +25,7 @@ function NavLinks() {
                 Dashboard
             </Link>
 
+            {can('CLIENTES_READ') && (
             <Link href="/clientes" className="nav-link" style={{
                 textDecoration: 'none',
                 color: isActive('/clientes') ? '#0070f3' : '#666',
@@ -33,7 +36,9 @@ function NavLinks() {
             }}>
                 Clientes
             </Link>
+            )}
 
+            {can('PRESTAMOS_READ') && (
             <Link href="/prestamos" className="nav-link" style={{
                 textDecoration: 'none',
                 color: isActive('/prestamos') ? '#0070f3' : '#666',
@@ -44,7 +49,9 @@ function NavLinks() {
             }}>
                 Préstamos
             </Link>
+            )}
 
+            {can('ABONOS_READ') && (
             <Link href="/abonos" className="nav-link" style={{
                 textDecoration: 'none',
                 color: isActive('/abonos') ? '#0070f3' : '#666',
@@ -55,7 +62,8 @@ function NavLinks() {
             }}>
                 Abonos
             </Link>
-            {session?.user.rol === 'ADMIN' && (
+            )}
+            {can('CAJA_READ', 'CAJA_CREATE', 'CAJA_UPDATE', 'CAJA_DELETE') && (
                 <Link href="/caja" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/caja') ? '#0070f3' : '#666',
@@ -68,7 +76,7 @@ function NavLinks() {
                 </Link>
             )}
 
-            {session?.user.rol === 'ADMIN' && (
+            {can('REPORTES_VIEW') && (
                 <Link href="/reports" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/reports') ? '#0070f3' : '#666',
@@ -80,7 +88,7 @@ function NavLinks() {
                     Reportes
                 </Link>
             )}
-            {session?.user.rol === 'ADMIN' && (
+            {can('RUTAS_READ', 'RUTAS_CREATE', 'RUTAS_UPDATE', 'RUTAS_DELETE') && (
                 <Link href="/rutas" className="nav-link" style={{
                     textDecoration: 'none',
                     color: isActive('/rutas') || pathname?.startsWith('/rutas/') ? '#0070f3' : '#666',
@@ -112,6 +120,7 @@ export function Navbar() {
     const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false);
     const { rutaSeleccionada, setRutaSeleccionada, rutas, loadingRutas } = useRuta();
+    const { can } = usePermissions();
     if (!session) return null;
 
     return (
@@ -160,7 +169,7 @@ export function Navbar() {
             </div>
 
             <div className="user-section" style={{ alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                {session?.user.rol === 'ADMIN' && !loadingRutas && (
+                {can('RUTAS_READ', 'RUTAS_CREATE', 'RUTAS_UPDATE', 'RUTAS_DELETE') && !loadingRutas && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <label style={{ color: '#666', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                             Ruta:
@@ -214,7 +223,7 @@ export function Navbar() {
                     <NavLinks />
                 </div>
                 <div style={{ height: 1, background: '#efefef', margin: '0.75rem 0' }} />
-                {session?.user.rol === 'ADMIN' && !loadingRutas && (
+                {can('RUTAS_READ', 'RUTAS_CREATE', 'RUTAS_UPDATE', 'RUTAS_DELETE') && !loadingRutas && (
                     <>
                         <div style={{ marginBottom: '0.75rem' }}>
                             <label style={{ display: 'block', color: '#666', fontSize: '0.85rem', marginBottom: '0.5rem' }}>

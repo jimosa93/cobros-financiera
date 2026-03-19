@@ -7,6 +7,7 @@ import FormCard from '@/components/FormCard';
 import { useSession } from "next-auth/react";
 import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
 import Spinner from "@/components/Spinner";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 const TIPOS = ["EFECTIVO", "CON-SUPERVISOR", "CON-JEFE"];
 
@@ -14,13 +15,28 @@ export default function EditAbonoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
+  const { can, loading: loadingPerms } = usePermissions();
   const [loading, setLoading] = useState(true);
   const [prestamos, setPrestamos] = useState<{ id: number; cliente?: { nombreCompleto: string }; montoPrestado: number }[]>([]);
   const [form, setForm] = useState<{ prestamoId: string; monto: string; tipoPago: string; notas: string; fecha: string }>({ prestamoId: "", monto: "", tipoPago: "", notas: "", fecha: "" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('ABONOS_UPDATE')) {
+      router.replace('/');
+    }
+  }, [status, loadingPerms, session, can, router]);
+
+  useEffect(() => {
     if (!params.id) return;
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) return;
+    if (!can('ABONOS_UPDATE')) return;
     const load = async () => {
       setLoading(true);
       const r = await fetch(`/api/abonos/${params.id}`);
@@ -41,14 +57,14 @@ export default function EditAbonoPage() {
       setLoading(false);
     };
     load();
-  }, [params.id]);
+  }, [params.id, status, loadingPerms, session, can]);
 
-  if (status === "loading" || loading) {
+  if (status === "loading" || loadingPerms || loading) {
     return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
       <Spinner size={40} />
     </div>;
   }
-  if (!session || session.user.rol !== "ADMIN") { router.replace("/"); return null; }
+  if (!session || !can('ABONOS_UPDATE')) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => setForm({ ...form, [e.target.name]: e.target.value });
 

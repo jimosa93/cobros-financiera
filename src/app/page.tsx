@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { useEffect, useState } from 'react';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { can } = usePermissions();
   const [rutaAsignada, setRutaAsignada] = useState<{ id: number; nombre: string } | null>(null);
   const [loadingRuta, setLoadingRuta] = useState(false);
 
@@ -20,15 +22,15 @@ export default function Home() {
 
   useEffect(() => {
     if (!session) return;
-    
+
     const loadRuta = async () => {
       const userRole = session.user.rol;
-      let rutaId = (session.user as any).rutaId;
+      let rutaId = (session.user as { rutaId?: number | null }).rutaId;
 
       // If session doesn't include rutaId (stale session), try fetching fresh user data
-      if ((!rutaId || rutaId === null) && (session.user as any).id) {
+      if ((!rutaId || rutaId === null) && (session.user as { id?: string }).id) {
         try {
-          const uid = (session.user as any).id;
+          const uid = (session.user as { id?: string }).id;
           const ures = await fetch(`/api/users/${uid}`);
           if (ures.ok) {
             const uj = await ures.json();
@@ -40,7 +42,7 @@ export default function Home() {
         }
       }
 
-      if (!rutaId || userRole !== 'COBRADOR') {
+      if (!rutaId || userRole !== 'USUARIO') {
         setRutaAsignada(null);
         return;
       }
@@ -91,6 +93,7 @@ export default function Home() {
         <h1 className="page-title">Dashboard - Sistema de Cobros</h1>
 
         <div className="dashboard-grid">
+          {can('ABONOS_CREATE') && (
           <DashboardCard
             title="Nuevo abono"
             description="Crear un nuevo abono rápidamente"
@@ -100,6 +103,7 @@ export default function Home() {
             titleColor="#111"
             descColor="#333"
           />
+          )}
 
           <DashboardCard
             title="Tarjeta virtual"
@@ -111,7 +115,7 @@ export default function Home() {
             descColor="#0b5257"
           />
 
-          {userRole === 'ADMIN' && (
+          {can('RUTAS_READ', 'RUTAS_CREATE', 'RUTAS_UPDATE', 'RUTAS_DELETE') && (
             <DashboardCard
               title="Rutas"
               description="Gestionar rutas y asignar cobradores"
@@ -123,49 +127,61 @@ export default function Home() {
             />
           )}
 
+          {can('ABONOS_READ') && (
           <DashboardCard
             title="Abonos"
             description="Registrar y consultar abonos"
             href="/abonos"
             color="#f59e0b"
           />
+          )}
 
+          {can('CLIENTES_READ') && (
           <DashboardCard
             title="Clientes"
             description="Gestionar clientes del sistema"
             href="/clientes"
             color="#0070f3"
           />
+          )}
 
+          {can('PRESTAMOS_READ') && (
           <DashboardCard
             title="Préstamos"
             description="Ver y gestionar préstamos"
             href="/prestamos"
             color="#10b981"
           />
-          {userRole === 'ADMIN' && (
+          )}
+          {can('REPORTES_VIEW', 'CAJA_READ', 'CAJA_CREATE', 'CAJA_UPDATE', 'CAJA_DELETE') && (
             <>
+              {can('REPORTES_VIEW') && (
               <DashboardCard
                 title="Reportes"
                 description="Acceder a informes y reportes del sistema"
                 href="/reports"
                 color="#0ea5a0"
               />
+              )}
+              {can('CAJA_READ', 'CAJA_CREATE', 'CAJA_UPDATE', 'CAJA_DELETE') && (
               <DashboardCard
                 title="Caja"
                 description="Movimientos de caja"
                 href="/caja"
                 color="#f97316"
               />
+              )}
             </>
           )}
 
-          <DashboardCard
-            title="Usuarios"
-            description="Gestionar usuarios del sistema"
-            href="/users"
-            color="#8b5cf6"
-          />
+          {userRole === 'ADMIN' && (
+            <DashboardCard
+              title="Usuarios"
+              description="Gestionar usuarios del sistema"
+              href="/users"
+              color="#8b5cf6"
+            />
+          )}
         </div>
 
         <div className="welcome-card">
@@ -183,7 +199,7 @@ export default function Home() {
               Tienes acceso completo al sistema para gestionar clientes, préstamos, abonos y usuarios.
             </p>
           )}
-          {userRole === 'COBRADOR' && (
+          {userRole === 'USUARIO' && (
             <>
               <p style={{ color: '#666' }}>
                 Puedes registrar abonos y consultar información de tus clientes asignados.

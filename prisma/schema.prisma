@@ -32,10 +32,10 @@ model Cliente {
 }
 
 model Usuario {
-  id             Int        @id @default(autoincrement())
+  id             Int              @id @default(autoincrement())
   nombreCompleto String
   celular        String
-  email          String     @unique
+  email          String           @unique
   alias          String?
   rol            Rol
   fechaCreacion  DateTime
@@ -44,10 +44,19 @@ model Usuario {
   fechaSoat      DateTime?
   password       String?
   rutaId         Int?
-  ruta           Ruta?      @relation(fields: [rutaId], references: [id])
+  ruta           Ruta?            @relation(fields: [rutaId], references: [id])
   abonos         Abono[]
-  prestamos      Prestamo[] @relation("prestamosCobrador")
+  prestamos      Prestamo[]       @relation("prestamosCobrador")
+  permisos       UsuarioPermiso[]
   @@index([rutaId])
+}
+
+model UsuarioPermiso {
+  usuarioId Int
+  permiso   Permiso
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  @@id([usuarioId, permiso])
+  @@index([usuarioId])
 }
 
 model Prestamo {
@@ -97,6 +106,31 @@ model Caja {
 enum Rol {
   ADMIN
   COBRADOR
+  USUARIO
+}
+
+enum Permiso {
+  CLIENTES_READ
+  CLIENTES_CREATE
+  CLIENTES_UPDATE
+  CLIENTES_DELETE
+  PRESTAMOS_READ
+  PRESTAMOS_CREATE
+  PRESTAMOS_UPDATE
+  PRESTAMOS_DELETE
+  ABONOS_READ
+  ABONOS_CREATE
+  ABONOS_UPDATE
+  ABONOS_DELETE
+  CAJA_READ
+  CAJA_CREATE
+  CAJA_UPDATE
+  CAJA_DELETE
+  RUTAS_READ
+  RUTAS_CREATE
+  RUTAS_UPDATE
+  RUTAS_DELETE
+  REPORTES_VIEW
 }
 
 enum MovimientoTipo {

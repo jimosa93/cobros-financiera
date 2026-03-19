@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface Ruta {
   id: number;
@@ -21,6 +22,7 @@ interface Ruta {
 export default function RutasPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { can, loading: loadingPerms } = usePermissions();
   const [rutas, setRutas] = useState<Ruta[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInactive, setShowInactive] = useState(false);
@@ -28,15 +30,42 @@ export default function RutasPage() {
   const [newRutaName, setNewRutaName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated' && session?.user?.rol !== 'ADMIN') {
-      router.push('/');
-    }
-  }, [status, session, router]);
+  const canAccess = !!session && can('RUTAS_READ', 'RUTAS_CREATE', 'RUTAS_UPDATE', 'RUTAS_DELETE');
 
-  if (status === 'loading') {
+  const fetchRutas = async () => {
+    try {
+      setLoading(true);
+      const url = showInactive ? '/api/rutas?includeInactive=true' : '/api/rutas';
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error('Error al cargar rutas');
+      const data = await res.json();
+      setRutas(data.rutas);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al cargar rutas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('RUTAS_READ', 'RUTAS_CREATE', 'RUTAS_UPDATE', 'RUTAS_DELETE')) {
+      router.replace('/');
+    }
+  }, [status, loadingPerms, session, can, router]);
+
+  useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!canAccess) return;
+    fetchRutas();
+  }, [status, loadingPerms, canAccess, showInactive]);
+
+  if (status === 'loading' || loadingPerms) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -49,33 +78,12 @@ export default function RutasPage() {
     );
   }
 
-  if (!session || session.user.rol !== 'ADMIN') {
-    return null;
-  }
-
-  useEffect(() => {
-    fetchRutas();
-  }, [showInactive]);
-
-  const fetchRutas = async () => {
-    try {
-      setLoading(true);
-      const url = showInactive ? '/api/rutas?includeInactive=true' : '/api/rutas';
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Error al cargar rutas');
-      const data = await res.json();
-      setRutas(data.rutas);
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al cargar rutas');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!canAccess) return null;
 
   const handleCreateRuta = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRutaName.trim()) return;
+    if (!can('RUTAS_CREATE')) return;
 
     try {
       setCreating(true);
@@ -100,6 +108,7 @@ export default function RutasPage() {
 
   const handleToggleActivo = async (id: number, activo: boolean) => {
     try {
+      if (!can('RUTAS_UPDATE')) return;
       const res = await fetch(`/api/rutas/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -130,22 +139,24 @@ export default function RutasPage() {
               <h1 className="page-title" style={{ marginBottom: '0.5rem' }}>Gestión de Rutas</h1>
               <p style={{ color: '#666', fontSize: '0.95rem' }}>Administra las rutas de cobro</p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#0070f3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                fontWeight: '500',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
-            >
-              + Nueva Ruta
-            </button>
+            {can('RUTAS_CREATE') && (
+              <button
+                onClick={() => setShowModal(true)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#0070f3',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                + Nueva Ruta
+              </button>
+            )}
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
@@ -219,37 +230,41 @@ export default function RutasPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <Link
-                      href={`/rutas/${ruta.id}`}
-                      style={{
-                        flex: 1,
-                        backgroundColor: '#0070f3',
-                        color: 'white',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        textAlign: 'center',
-                        textDecoration: 'none',
-                        fontSize: '0.9rem',
-                        fontWeight: '500'
-                      }}
-                    >
-                      Ver Detalles
-                    </Link>
-                    <button
-                      onClick={() => handleToggleActivo(ruta.id, ruta.activo)}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        fontSize: '0.9rem',
-                        fontWeight: '500',
-                        border: 'none',
-                        cursor: 'pointer',
-                        backgroundColor: ruta.activo ? '#e0e0e0' : '#28a745',
-                        color: ruta.activo ? '#555' : 'white'
-                      }}
-                    >
-                      {ruta.activo ? 'Desactivar' : 'Activar'}
-                    </button>
+                    {can('RUTAS_READ') && (
+                      <Link
+                        href={`/rutas/${ruta.id}`}
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#0070f3',
+                          color: 'white',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '6px',
+                          textAlign: 'center',
+                          textDecoration: 'none',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Ver Detalles
+                      </Link>
+                    )}
+                    {can('RUTAS_UPDATE') && (
+                      <button
+                        onClick={() => handleToggleActivo(ruta.id, ruta.activo)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          borderRadius: '6px',
+                          fontSize: '0.9rem',
+                          fontWeight: '500',
+                          border: 'none',
+                          cursor: 'pointer',
+                          backgroundColor: ruta.activo ? '#e0e0e0' : '#28a745',
+                          color: ruta.activo ? '#555' : 'white'
+                        }}
+                      >
+                        {ruta.activo ? 'Desactivar' : 'Activar'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

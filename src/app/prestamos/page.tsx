@@ -13,6 +13,7 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import { useSession } from 'next-auth/react';
 import Spinner from "@/components/Spinner";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface Prestamo {
   id: number;
@@ -91,6 +92,7 @@ function RowSortable({ p, idx, children, rowClassName }: { p: Prestamo, idx: num
 
 export default function PrestamosPage() {
   const { data: session } = useSession();
+  const { can } = usePermissions();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
   const toast = useToast();
   const { rutaSeleccionada } = useRuta();
@@ -209,7 +211,7 @@ export default function PrestamosPage() {
           placeholder="Buscar por cliente o nota..."
           addHref="/prestamos/nuevo"
           addLabel="+ Nuevo Préstamo"
-          showAdd={isAdmin}
+          showAdd={can('PRESTAMOS_CREATE')}
         />
         <div className="table-wrap" style={{ overflowX: 'auto', padding: '1.6rem 1.1rem' }}>
           {loading ? (
@@ -273,14 +275,18 @@ export default function PrestamosPage() {
                             <td className="table-cell">{atrasadas > 0 ? atrasadas : 0}</td>
 
                             <td className="table-cell" style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
-                              {isAdmin && (
+                              {(can('PRESTAMOS_UPDATE') || can('PRESTAMOS_DELETE')) && (
                                 <>
+                                  {can('PRESTAMOS_UPDATE') && (
                                   <button aria-label="Editar" title="Editar" onClick={() => window.location.href = `/prestamos/${p.id}/editar`} style={{ padding: 8, border: '1px solid #bbb', background: 'white', borderRadius: 6, cursor: 'pointer' }}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0070f3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                   </button>
+                                  )}
+                                  {can('PRESTAMOS_DELETE') && (
                                   <button aria-label="Eliminar" title="Eliminar" onClick={() => eliminarPrestamo(p.id)} style={{ padding: 8, border: '1px solid #e57373', background: '#e57373', borderRadius: 6, cursor: 'pointer' }}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M14 11v6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                   </button>
+                                  )}
                                 </>
                               )}
                               <button aria-label="Tarjeta" title="Tarjeta" onClick={() => {

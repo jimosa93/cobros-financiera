@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import { getCurrentUser } from '@/lib/auth';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Rol, type Permiso } from '@prisma/client';
+import { DEFAULT_USUARIO_PERMISOS } from '@/lib/permissionCatalog';
+
+async function getAdminUser(request: NextRequest) {
+    const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+    });
+    if (!token?.sub) return null;
+    const user = await prisma.usuario.findUnique({
+        where: { id: parseInt(token.sub, 10) },
+        select: {
+            id: true,
+            nombreCompleto: true,
+            email: true,
+            rol: true,
+            alias: true,
+            rutaId: true,
+        },
+    });
+    return user ?? null;
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -15,7 +37,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat } = body;
+        const { nombreCompleto, celular, email, password, alias, rol, placaMoto, fechaTecnico, fechaSoat, permisos } = body;
 
         if (!nombreCompleto || !celular || !email || !password || !rol) {
             return NextResponse.json(
@@ -37,21 +59,34 @@ export async function POST(request: NextRequest) {
 
         const hashedPassword = await hash(password, 12);
 
-        const newUser = await prisma.usuario.create({
-            data: {
-                nombreCompleto,
-                celular,
-                email,
-                password: hashedPassword,
-                alias: alias || null,
-                rol: rol as 'ADMIN' | 'COBRADOR',
-                fechaCreacion: new Date(),
-                placaMoto: placaMoto || null,
-                fechaTecnico: fechaTecnico ? new Date(fechaTecnico) : null,
-                fechaSoat: fechaSoat ? new Date(fechaSoat) : null,
-            },
+        const permisoList = Array.isArray(permisos) ? permisos as string[] : (rol === 'USUARIO' ? DEFAULT_USUARIO_PERMISOS : []);
+
+        const newUser = await prisma.$transaction(async (tx) => {
+            const u = await tx.usuario.create({
+                data: {
+                    nombreCompleto,
+                    celular,
+                    email,
+                    password: hashedPassword,
+                    alias: alias || null,
+                    // Cast to Prisma enum types (runtime values come from persisted DB / form)
+                    rol: rol as Rol,
+                    fechaCreacion: new Date(),
+                    placaMoto: placaMoto || null,
+                    fechaTecnico: fechaTecnico ? new Date(fechaTecnico) : null,
+                    fechaSoat: fechaSoat ? new Date(fechaSoat) : null,
+                },
+            });
+            if (permisoList.length > 0) {
+                await tx.usuarioPermiso.createMany({
+                    data: permisoList.map((p) => ({ usuarioId: u.id, permiso: p as Permiso })),
+                    skipDuplicates: true,
+                });
+            }
+            return u;
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password: _, ...userWithoutPassword } = newUser;
 
         return NextResponse.json(
@@ -67,9 +102,17 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET: List users (search + pagination)
+// GET: List users (search + pagination) — ADMIN only
 export async function GET(request: NextRequest) {
     try {
+        const user = await getAdminUser(request);
+        if (!user || user.rol !== 'ADMIN') {
+            return NextResponse.json(
+                { error: 'No autorizado' },
+                { status: 401 }
+            );
+        }
+
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get('page') || '1', 10);
         const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
@@ -104,7 +147,13 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ users, total });
     } catch (error) {
-        console.error('Error listing users', error);
-        return NextResponse.json({ error: 'Error al listar usuarios' }, { status: 500 });
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error('Error listing users:', message, stack);
+        const isDev = process.env.NODE_ENV === 'development';
+        return NextResponse.json(
+            { error: isDev ? message : 'Error al listar usuarios' },
+            { status: 500 }
+        );
     }
 }

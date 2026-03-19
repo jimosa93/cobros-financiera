@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
     const startParam = searchParams.get('start');
     const endParam = searchParams.get('end');
     const rutaIdParam = searchParams.get('rutaId');
-    
+
     let rutaId: number | null = null;
-    if (user.rol === 'COBRADOR' && user.rutaId) {
+    if (user.rol === 'USUARIO' && user.rutaId) {
       rutaId = user.rutaId;
     } else if (user.rol === 'ADMIN' && rutaIdParam) {
       rutaId = parseInt(rutaIdParam);
@@ -27,54 +27,54 @@ export async function GET(request: NextRequest) {
       const startDate = new Date(startParam);
 
       const prevPrestadoAgg = await prisma.prestamo.aggregate({
-        where: { 
+        where: {
           fechaInicio: { lt: startDate },
           ...(rutaId ? { rutaId } : {})
         },
         _sum: { montoPrestado: true },
       });
       const prevCobradoAgg = await prisma.abono.aggregate({
-        where: { 
+        where: {
           fecha: { lt: startDate },
           ...(rutaId ? { prestamo: { rutaId } } : {})
         },
         _sum: { monto: true },
       });
       const prevEntradasAgg = await prisma.caja.aggregate({
-        where: { 
-          fecha: { lt: startDate }, 
+        where: {
+          fecha: { lt: startDate },
           tipo: 'ENTRADA',
           ...(rutaId ? { rutaId } : {})
         },
         _sum: { monto: true },
       });
       const prevSalidasAgg = await prisma.caja.aggregate({
-        where: { 
-          fecha: { lt: startDate }, 
+        where: {
+          fecha: { lt: startDate },
           tipo: 'SALIDA',
           ...(rutaId ? { rutaId } : {})
         },
         _sum: { monto: true },
       });
       const prevGastosAgg = await prisma.caja.aggregate({
-        where: { 
-          fecha: { lt: startDate }, 
+        where: {
+          fecha: { lt: startDate },
           tipo: 'GASTO',
           ...(rutaId ? { rutaId } : {})
         },
         _sum: { monto: true },
       });
       const prevEntradasRutaAgg = await prisma.caja.aggregate({
-        where: { 
-          fecha: { lt: startDate }, 
+        where: {
+          fecha: { lt: startDate },
           tipo: 'ENTRADA_RUTA',
           ...(rutaId ? { rutaId } : {})
         },
         _sum: { monto: true },
       });
       const prevSalidasRutaAgg = await prisma.caja.aggregate({
-        where: { 
-          fecha: { lt: startDate }, 
+        where: {
+          fecha: { lt: startDate },
           tipo: 'SALIDA_RUTA',
           ...(rutaId ? { rutaId } : {})
         },
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       const rutaFilter = rutaId ? `AND p."rutaId" = ${rutaId}` : '';
       const rutaFilterAbono = rutaId ? `AND pr."rutaId" = ${rutaId}` : '';
       const rutaFilterCaja = rutaId ? `AND c."rutaId" = ${rutaId}` : '';
-      
+
       const perDayRows: Array<{
         day: Date;
         prestado: string;
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
     }
 
     const ref = searchParams.get('ref');
-    
+
     const rutaFilter = rutaId ? `AND p."rutaId" = ${rutaId}` : '';
     const rutaFilterAbono = rutaId ? `AND pr."rutaId" = ${rutaId}` : '';
     const rutaFilterCaja = rutaId ? `AND c."rutaId" = ${rutaId}` : '';

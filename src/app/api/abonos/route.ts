@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
     const tipoPagos = searchParams.getAll('tipoPago') || [];
 
     let where: Prisma.AbonoWhereInput = {};
-    
-    if (user.rol === 'COBRADOR' && user.rutaId) {
+
+    if (user.rol === 'USUARIO' && user.rutaId) {
       where.prestamo = { rutaId: user.rutaId };
     } else if (user.rol === 'ADMIN' && rutaIdParam) {
       where.prestamo = { rutaId: parseInt(rutaIdParam) };

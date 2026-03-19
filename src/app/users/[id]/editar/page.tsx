@@ -13,6 +13,8 @@ interface Ruta {
   activo: boolean;
 }
 
+type PermissionGroup = { label: string; permisos: { value: string; label: string }[] };
+
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
@@ -20,6 +22,8 @@ export default function EditUserPage() {
   const [loading, setLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [form, setForm] = useState<any>({});
+  const [permisos, setPermisos] = useState<string[]>([]);
+  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [rutas, setRutas] = useState<Ruta[]>([]);
@@ -27,6 +31,9 @@ export default function EditUserPage() {
   useEffect(() => {
     fetch('/api/rutas').then(r => r.json()).then(data => {
       if (data.rutas) setRutas(data.rutas);
+    });
+    fetch('/api/permissions').then(r => r.json()).then(data => {
+      if (data.groups) setPermissionGroups(data.groups);
     });
   }, []);
 
@@ -39,12 +46,13 @@ export default function EditUserPage() {
           celular: data.user.celular || "",
           email: data.user.email || "",
           alias: data.user.alias || "",
-          rol: data.user.rol || "COBRADOR",
+          rol: data.user.rol || "USUARIO",
           placaMoto: data.user.placaMoto || "",
-          fechaTecnico: data.user.fechaTecnico ? data.user.fechaTecnico.substr(0, 10) : "",
-          fechaSoat: data.user.fechaSoat ? data.user.fechaSoat.substr(0, 10) : "",
+          fechaTecnico: data.user.fechaTecnico ? String(data.user.fechaTecnico).slice(0, 10) : "",
+          fechaSoat: data.user.fechaSoat ? String(data.user.fechaSoat).slice(0, 10) : "",
           rutaId: data.user.rutaId?.toString() || "",
         });
+        setPermisos(Array.isArray(data.user.permisos) ? data.user.permisos : []);
       }
     }).finally(() => setLoading(false));
   }, [params.id]);
@@ -58,6 +66,12 @@ export default function EditUserPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const togglePermiso = (value: string) => {
+    setPermisos((prev) =>
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(""); setSaving(true);
@@ -65,7 +79,7 @@ export default function EditUserPage() {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, permisos: form.rol === 'USUARIO' ? permisos : [] })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
@@ -96,12 +110,36 @@ export default function EditUserPage() {
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Rol</label>
-            <select name="rol" value={form.rol || "COBRADOR"} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }}>
-              <option value="COBRADOR">Cobrador</option>
+            <select name="rol" value={form.rol || "USUARIO"} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }}>
+              <option value="USUARIO">Usuario</option>
               <option value="ADMIN">Administrador</option>
             </select>
           </div>
-          {form.rol === 'COBRADOR' && (
+          {form.rol === 'USUARIO' && permissionGroups.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Permisos</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '12px 0' }}>
+                {permissionGroups.map((group) => (
+                  <div key={group.label} style={{ border: '1px solid #e0e0e0', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+                    <div style={{ fontWeight: 600, marginBottom: 8, color: '#333' }}>{group.label}</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                      {group.permisos.map((p) => (
+                        <label key={p.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14, color: '#232323' }}>
+                          <input
+                            type="checkbox"
+                            checked={permisos.includes(p.value)}
+                            onChange={() => togglePermiso(p.value)}
+                          />
+                          <span style={{ color: '#232323' }}>{p.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {form.rol === 'USUARIO' && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 8, color: '#555', fontWeight: 500 }}>Ruta Asignada</label>
               <select name="rutaId" value={form.rutaId || ""} onChange={handleChange} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: 4, fontSize: '1rem', color: '#232323', background: '#fff' }}>

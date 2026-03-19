@@ -11,6 +11,7 @@ import { cardStyle } from '@/styles/ui';
 import { Pagination, IconButton } from '@/components/TableControls';
 import { useToast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface CajaItem {
   id: number;
@@ -23,6 +24,7 @@ interface CajaItem {
 export default function CajaPage() {
   const { data: session } = useSession();
   const isAdmin = !!session && session.user?.rol === 'ADMIN';
+  const { can } = usePermissions();
   const router = useRouter();
   const toast = useToast();
   const { rutaSeleccionada } = useRuta();
@@ -60,8 +62,8 @@ export default function CajaPage() {
 
   useEffect(() => {
     if (session === undefined) return;
-    if (!isAdmin) router.replace('/');
-  }, [session, isAdmin, router]);
+    if (!can('CAJA_READ', 'CAJA_CREATE', 'CAJA_UPDATE', 'CAJA_DELETE')) router.replace('/');
+  }, [session, can, router]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -77,7 +79,7 @@ export default function CajaPage() {
             placeholder="Buscar movimientos..."
             addHref="/caja/nuevo"
             addLabel="+ Nuevo movimiento de Caja"
-            showAdd={isAdmin}
+            showAdd={can('CAJA_CREATE')}
           />
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -87,27 +89,27 @@ export default function CajaPage() {
                   <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 700, color: '#222' }}>Tipo</th>
                   <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 700, color: '#222' }}>Monto</th>
                   <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 700, color: '#222' }}>Nota</th>
-                  {isAdmin && <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 700, color: '#222' }}>Acciones</th>}
+                  {(can('CAJA_UPDATE') || can('CAJA_DELETE')) && <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 700, color: '#222' }}>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>
+                  <tr><td colSpan={(can('CAJA_UPDATE') || can('CAJA_DELETE')) ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>
                     <Spinner size={40} />
                   </td></tr>
                 ) : items.length === 0 ? (
-                  <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>No hay movimientos</td></tr>
+                  <tr><td colSpan={(can('CAJA_UPDATE') || can('CAJA_DELETE')) ? 5 : 4} style={{ padding: 20, textAlign: 'center' }}>No hay movimientos</td></tr>
                 ) : items.map(it => (
                   <tr key={it.id} style={{ borderBottom: '1px solid #eee' }}>
                     <td style={{ padding: 12, color: '#222' }}>{new Date(it.fecha).toLocaleDateString('es-ES')}</td>
                     <td style={{ padding: 12, color: '#222' }}>{it.tipo}</td>
                     <td style={{ padding: 12, color: '#222' }}>{Number(it.monto).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</td>
                     <td style={{ padding: 12, color: '#222' }}>{it.nota || '-'}</td>
-                    {isAdmin && (
+                    {(can('CAJA_UPDATE') || can('CAJA_DELETE')) && (
                       <td style={{ padding: 12 }}>
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <IconButton type="edit" title="Editar" onClick={() => router.push(`/caja/${it.id}/editar`)} />
-                          <IconButton type="delete" title="Eliminar" onClick={async () => {
+                          {can('CAJA_UPDATE') && <IconButton type="edit" title="Editar" onClick={() => router.push(`/caja/${it.id}/editar`)} />}
+                          {can('CAJA_DELETE') && <IconButton type="delete" title="Eliminar" onClick={async () => {
                             if (!confirm('¿Eliminar movimiento de caja?')) return;
                             try {
                               const res = await fetch('/api/caja/delete', {
@@ -123,7 +125,7 @@ export default function CajaPage() {
                               console.error('Error deleting caja:', error);
                               toast.addToast({ message: 'Error eliminando movimiento', type: 'error' });
                             }
-                          }} />
+                          }} />}
                         </div>
                       </td>
                     )}

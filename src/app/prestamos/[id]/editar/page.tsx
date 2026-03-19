@@ -8,6 +8,7 @@ import FormCard from '@/components/FormCard';
 import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
 import Spinner from '@/components/Spinner';
 import { Prestamo } from '@prisma/client';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface Cliente { id: number; nombreCompleto: string; }
 const INTERESES = [0.1, 0.2, 0.3];
@@ -16,6 +17,7 @@ export default function EditarPrestamoPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { can, loading: loadingPerms } = usePermissions();
   const [prestamo, setPrestamo] = useState<Prestamo | undefined>(undefined);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,22 @@ export default function EditarPrestamoPage() {
   const [nota, setNota] = useState('');
 
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('PRESTAMOS_UPDATE')) {
+      router.replace('/');
+    }
+  }, [status, loadingPerms, session, can, router]);
+
+  useEffect(() => {
     if (!params.id) return;
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) return;
+    if (!can('PRESTAMOS_UPDATE')) return;
+
     async function fetchData() {
       setLoading(true);
       const resp1 = await fetch(`/api/prestamos/${params.id}`);
@@ -47,17 +64,14 @@ export default function EditarPrestamoPage() {
       setLoading(false);
     }
     fetchData();
-  }, [params.id]);
+  }, [params.id, status, loadingPerms, session, can]);
 
-  if (status === "loading" || loading) {
+  if (status === "loading" || loadingPerms || loading) {
     return <div style={{ overflowX: 'auto', background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '1.6rem 1.1rem', height: '100vh' }}>
       <Spinner size={40} />
     </div>;
   }
-  if (!session || session.user.rol !== "ADMIN") {
-    router.replace("/");
-    return null;
-  }
+  if (!session || !can('PRESTAMOS_UPDATE')) return null;
   if (!prestamo) {
     return <div style={{ textAlign: 'center', padding: '2rem' }}>Préstamo no encontrado</div>;
   }

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import React from "react";
-import { searchBlock, inputStyle, primaryButton } from '@/styles/ui';
 import SearchBar from '@/components/SearchBar';
 import { IconButton, Pagination } from '@/components/TableControls';
 import { useRouter } from "next/navigation";
@@ -34,15 +33,19 @@ export default function UsersPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/users?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/users?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(query)}`, { credentials: 'include' });
         const data = await res.json();
-        setUsers(data.users || []);
-        setTotal(data.total || 0);
+        if (!res.ok) {
+          toast.addToast({ message: data.error || 'Error al cargar usuarios', type: 'error' });
+          return;
+        }
+        setUsers(data.users ?? []);
+        setTotal(data.total ?? 0);
       } finally {
         setLoading(false);
       }
     })();
-  }, [page, pageSize, query]);
+  }, [page, pageSize, query, toast]);
 
   async function eliminar(id: number) {
     if (!confirm("¿Eliminar usuario?")) return;
@@ -93,7 +96,7 @@ export default function UsersPage() {
                     <td style={cellStyle}>{u.email}</td>
                     <td style={cellStyle}>{u.celular}</td>
                     <td style={cellStyle}>{u.alias || "-"}</td>
-                    <td style={cellStyle}>{u.rol}</td>
+                    <td style={cellStyle}>{(u.rol === 'USUARIO' || u.rol === 'COBRADOR') ? 'Usuario' : u.rol}</td>
                     <td style={{ ...cellStyle, background: 'none', display: 'flex', gap: 8, justifyContent: 'center' }}>
                       <IconButton type="edit" onClick={() => router.push(`/users/${u.id}/editar`)} />
                       <IconButton type="delete" onClick={() => eliminar(u.id)} />

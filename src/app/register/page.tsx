@@ -1,29 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import FormCard from '@/components/FormCard';
 import { Field, Input, Select, errorStyle } from '@/components/FormControls';
 
+type PermissionGroup = { label: string; permisos: { value: string; label: string }[] };
+
+const DEFAULT_PERMISOS = ['CLIENTES_READ', 'PRESTAMOS_READ', 'ABONOS_READ', 'ABONOS_CREATE'];
+
 export default function RegisterPage() {
     const router = useRouter();
     const { data: session } = useSession();
+    const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
     const [formData, setFormData] = useState({
         nombreCompleto: '',
         celular: '',
         email: '',
         password: '',
         alias: '',
-        rol: 'COBRADOR' as 'ADMIN' | 'COBRADOR',
+        rol: 'USUARIO' as 'ADMIN' | 'USUARIO',
         placaMoto: '',
         fechaTecnico: '',
         fechaSoat: '',
     });
+    const [permisos, setPermisos] = useState<string[]>(DEFAULT_PERMISOS);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        fetch('/api/permissions')
+            .then((r) => r.json())
+            .then((data) => data.groups && setPermissionGroups(data.groups))
+            .catch(() => { });
+    }, []);
 
     if (!session || session.user.rol !== 'ADMIN') {
         return (
@@ -66,6 +79,7 @@ export default function RegisterPage() {
                     fechaSoat: formData.fechaSoat || null,
                     alias: formData.alias || null,
                     placaMoto: formData.placaMoto || null,
+                    permisos: formData.rol === 'USUARIO' ? permisos : [],
                 }),
             });
 
@@ -81,11 +95,12 @@ export default function RegisterPage() {
                     email: '',
                     password: '',
                     alias: '',
-                    rol: 'COBRADOR',
+                    rol: 'USUARIO',
                     placaMoto: '',
                     fechaTecnico: '',
                     fechaSoat: '',
                 });
+                setPermisos(DEFAULT_PERMISOS);
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 try { sessionStorage.setItem('globalToast', JSON.stringify({ message: 'Usuario creado', type: 'success' })); window.dispatchEvent(new Event('global-toast')); } catch (e) { }
                 router.push('/users');
@@ -103,6 +118,12 @@ export default function RegisterPage() {
             ...formData,
             [e.target.name]: e.target.value,
         });
+    };
+
+    const togglePermiso = (value: string) => {
+        setPermisos((prev) =>
+            prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
+        );
     };
 
     return (
@@ -124,10 +145,33 @@ export default function RegisterPage() {
                     </Field>
                     <Field label="Rol *">
                         <Select name="rol" value={formData.rol} onChange={handleChange} required>
-                            <option value="COBRADOR">Cobrador</option>
+                            <option value="USUARIO">Usuario</option>
                             <option value="ADMIN">Administrador</option>
                         </Select>
                     </Field>
+                    {formData.rol === 'USUARIO' && permissionGroups.length > 0 && (
+                        <Field label="Permisos">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '12px 0' }}>
+                                {permissionGroups.map((group) => (
+                                    <div key={group.label} style={{ border: '1px solid #e0e0e0', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+                                        <div style={{ fontWeight: 600, marginBottom: 8, color: '#333' }}>{group.label}</div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                                            {group.permisos.map((p) => (
+                                                <label key={p.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14, color: '#232323' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={permisos.includes(p.value)}
+                                                        onChange={() => togglePermiso(p.value)}
+                                                    />
+                                                    <span style={{ color: '#232323' }}>{p.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Field>
+                    )}
                     <Field label="Alias">
                         <Input name="alias" type="text" value={formData.alias} onChange={handleChange} />
                     </Field>

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface Usuario {
   id: number;
@@ -28,6 +29,7 @@ interface Ruta {
 export default function RutaDetailPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { can, loading: loadingPerms } = usePermissions();
   const params = useParams();
   const id = params?.id as string;
   
@@ -37,14 +39,17 @@ export default function RutaDetailPage() {
   const [newName, setNewName] = useState('');
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated' && session?.user?.rol !== 'ADMIN') {
-      router.push('/');
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
     }
-  }, [status, session, router]);
+    if (!can('RUTAS_READ', 'RUTAS_UPDATE', 'RUTAS_DELETE')) {
+      router.replace('/');
+    }
+  }, [status, loadingPerms, session, can, router]);
 
-  if (status === 'loading') {
+  if (status === 'loading' || loadingPerms) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -57,20 +62,18 @@ export default function RutaDetailPage() {
     );
   }
 
-  if (!session || session.user.rol !== 'ADMIN') {
-    return null;
-  }
+  if (!session || !can('RUTAS_READ', 'RUTAS_UPDATE', 'RUTAS_DELETE')) return null;
 
   useEffect(() => {
     if (id) {
       fetchRuta();
     }
-  }, [id]);
+  }, [id, session, can]);
 
   const fetchRuta = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/rutas/${id}`);
+      const res = await fetch(`/api/rutas/${id}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Error al cargar ruta');
       const data = await res.json();
       setRuta(data.ruta);
@@ -87,6 +90,7 @@ export default function RutaDetailPage() {
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
+    if (!can('RUTAS_UPDATE')) return;
 
     try {
       const res = await fetch(`/api/rutas/${id}`, {
@@ -106,6 +110,7 @@ export default function RutaDetailPage() {
 
   const handleToggleActivo = async () => {
     if (!ruta) return;
+    if (!can('RUTAS_UPDATE')) return;
 
     try {
       const res = await fetch(`/api/rutas/${id}`, {
@@ -124,6 +129,7 @@ export default function RutaDetailPage() {
 
   const handleDelete = async () => {
     if (!ruta) return;
+    if (!can('RUTAS_DELETE')) return;
 
     if (ruta._count.clientes > 0 || ruta._count.prestamos > 0 || ruta.usuarios.length > 0) {
       alert('No se puede eliminar una ruta con clientes, préstamos o usuarios asociados. Desactívala en su lugar.');
@@ -259,17 +265,19 @@ export default function RutaDetailPage() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <h1 className="page-title" style={{ marginBottom: 0 }}>{ruta.nombre}</h1>
-                    <button
-                      onClick={() => setEditing(true)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '1.25rem'
-                      }}
-                    >
-                      ✏️
-                    </button>
+                    {can('RUTAS_UPDATE') && (
+                      <button
+                        onClick={() => setEditing(true)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '1.25rem'
+                        }}
+                      >
+                        ✏️
+                      </button>
+                    )}
                   </div>
                   <span
                     style={{
@@ -289,34 +297,38 @@ export default function RutaDetailPage() {
               )}
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                onClick={handleToggleActivo}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                  backgroundColor: ruta.activo ? '#e0e0e0' : '#28a745',
-                  color: ruta.activo ? '#555' : 'white'
-                }}
-              >
-                {ruta.activo ? 'Desactivar' : 'Activar'}
-              </button>
-              <button
-                onClick={handleDelete}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                Eliminar
-              </button>
+              {can('RUTAS_UPDATE') && (
+                <button
+                  onClick={handleToggleActivo}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    backgroundColor: ruta.activo ? '#e0e0e0' : '#28a745',
+                    color: ruta.activo ? '#555' : 'white'
+                  }}
+                >
+                  {ruta.activo ? 'Desactivar' : 'Activar'}
+                </button>
+              )}
+              {can('RUTAS_DELETE') && (
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  Eliminar
+                </button>
+              )}
             </div>
           </div>
 
@@ -357,12 +369,14 @@ export default function RutaDetailPage() {
                       <p style={{ fontWeight: '600', color: '#333' }}>{usuario.nombreCompleto}</p>
                       <p style={{ fontSize: '0.85rem', color: '#666' }}>{usuario.email}</p>
                     </div>
-                    <Link
-                      href={`/users/${usuario.id}/editar`}
-                      style={{ color: '#0070f3', fontSize: '0.9rem', textDecoration: 'none' }}
-                    >
-                      Editar →
-                    </Link>
+                    {session?.user?.rol === 'ADMIN' && (
+                      <Link
+                        href={`/users/${usuario.id}/editar`}
+                        style={{ color: '#0070f3', fontSize: '0.9rem', textDecoration: 'none' }}
+                      >
+                        Editar →
+                      </Link>
+                    )}
                   </div>
                 ))}
               </div>

@@ -10,6 +10,7 @@ import { RutaBanner } from './RutaBanner';
 import { IconButton, Pagination } from '@/components/TableControls';
 import SearchBar from './SearchBar';
 import Spinner from './Spinner';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface Cliente {
   id: number;
@@ -30,6 +31,7 @@ interface Pagination {
 
 export default function ClientesList() {
   const { data: session } = useSession();
+  const { can } = usePermissions();
   const toast = useToast();
   const { rutaSeleccionada } = useRuta();
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -119,6 +121,9 @@ export default function ClientesList() {
   };
 
   if (!session) return null;
+  const canCreate = can('CLIENTES_CREATE');
+  const canEdit = can('CLIENTES_UPDATE');
+  const canDelete = can('CLIENTES_DELETE');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
@@ -140,7 +145,7 @@ export default function ClientesList() {
           placeholder="Buscar por nombre, celular o dirección..."
           addHref="/clientes/nuevo"
           addLabel="+ Nuevo Cliente"
-          showAdd={session.user.rol === 'ADMIN'}
+          showAdd={canCreate}
         />
 
         {error && (
@@ -220,10 +225,10 @@ export default function ClientesList() {
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
-                          {session.user.rol === 'ADMIN' && (
+                          {(canEdit || canDelete) && (
                             <>
-                              <IconButton type="edit" onClick={() => window.location.href = `/clientes/${cliente.id}/editar`} />
-                              <IconButton type="delete" onClick={() => handleDelete(cliente.id)} />
+                              {canEdit && <IconButton type="edit" onClick={() => window.location.href = `/clientes/${cliente.id}/editar`} />}
+                              {canDelete && <IconButton type="delete" onClick={() => handleDelete(cliente.id)} />}
                             </>
                           )}
                           {cliente.prestamos && cliente.prestamos.length > 0 && (

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const rutaIdParam = searchParams.get('rutaId');
 
     let rutaId: number | null = null;
-    if (user.rol === 'COBRADOR' && user.rutaId) {
+    if (user.rol === 'USUARIO' && user.rutaId) {
       rutaId = user.rutaId;
     } else if (user.rol === 'ADMIN' && rutaIdParam) {
       rutaId = parseInt(rutaIdParam);
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     const byPrestamo = await prisma.abono.groupBy({
       by: ['prestamoId'],
-      where: { 
+      where: {
         fecha: { gte: start, lt: end },
         ...(rutaId ? { prestamo: { rutaId } } : {})
       },

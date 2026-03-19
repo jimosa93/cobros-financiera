@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const baseWhere: any = {};
-    
-    if (user.rol === 'COBRADOR' && user.rutaId) {
+
+    if (user.rol === 'USUARIO' && user.rutaId) {
       baseWhere.rutaId = user.rutaId;
     } else if (user.rol === 'ADMIN' && rutaIdParam) {
       baseWhere.rutaId = parseInt(rutaIdParam);
@@ -31,14 +31,14 @@ export async function GET(request: NextRequest) {
 
     const where = search
       ? {
-          ...baseWhere,
-          OR: [
-            { nombreCompleto: { contains: search, mode: 'insensitive' as const } },
-            { celular: { contains: search, mode: 'insensitive' as const } },
-            { direccionNegocio: { contains: search, mode: 'insensitive' as const } },
-            { direccionVivienda: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
+        ...baseWhere,
+        OR: [
+          { nombreCompleto: { contains: search, mode: 'insensitive' as const } },
+          { celular: { contains: search, mode: 'insensitive' as const } },
+          { direccionNegocio: { contains: search, mode: 'insensitive' as const } },
+          { direccionVivienda: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }
       : baseWhere;
 
     const [clientes, total] = await Promise.all([

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import FormCard from '@/components/FormCard';
 import { Field, Input, Select, ReadonlyInput } from '@/components/FormControls';
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface Cliente {
   id: number;
@@ -24,6 +25,7 @@ const INTERESES = [0.1, 0.2, 0.3];
 export default function NuevoPrestamoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { can, loading: loadingPerms } = usePermissions();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [rutas, setRutas] = useState<Ruta[]>([]);
   const [error, setError] = useState<string>("");
@@ -41,13 +43,28 @@ export default function NuevoPrestamoPage() {
   const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) return;
+    if (!can('PRESTAMOS_CREATE')) return;
+
     const fetchRutas = async () => {
       const res = await fetch("/api/rutas");
       const data = await res.json();
       setRutas(data.rutas || []);
     };
     fetchRutas().catch(console.error);
-  }, []);
+  }, [status, loadingPerms, session, can]);
+
+  useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('PRESTAMOS_CREATE')) {
+      router.replace('/');
+    }
+  }, [status, loadingPerms, session, can, router]);
 
   useEffect(() => {
     if (rutaId) {
@@ -63,13 +80,10 @@ export default function NuevoPrestamoPage() {
     setClienteId("");
   }, [rutaId]);
 
-  if (status === "loading") {
+  if (status === "loading" || loadingPerms) {
     return <div style={{ textAlign: 'center', padding: '2rem' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>;
   }
-  if (!session || session.user.rol !== "ADMIN") {
-    router.replace("/");
-    return null;
-  }
+  if (!session || !can('PRESTAMOS_CREATE')) return null;
 
   // Calcular total a pagar y valor cuota
   const montoN = parseFloat(monto);

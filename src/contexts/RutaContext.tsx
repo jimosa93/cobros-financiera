@@ -35,11 +35,17 @@ export function RutaProvider({ children }: { children: ReactNode }) {
 
   const fetchRutas = async () => {
     try {
-      const res = await fetch('/api/rutas');
-      if (res.ok) {
-        const data = await res.json();
-        setRutas(data.rutas || []);
+      const res = await fetch('/api/rutas', { credentials: 'include' });
+      if (!res.ok) return;
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        // Likely redirected to /login (HTML) when unauthenticated.
+        return;
       }
+
+      const data = await res.json();
+      setRutas(data.rutas || []);
     } catch (error) {
       console.error('Error loading rutas:', error);
     } finally {

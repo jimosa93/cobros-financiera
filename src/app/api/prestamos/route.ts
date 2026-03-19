@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
     const clienteIdParam = searchParams.get('clienteId');
     let where: Prisma.PrestamoWhereInput = {};
-    
-    if (user.rol === 'COBRADOR' && user.rutaId) {
+
+    if (user.rol === 'USUARIO' && user.rutaId) {
       where.rutaId = user.rutaId;
     } else if (user.rol === 'ADMIN' && rutaIdParam) {
       where.rutaId = parseInt(rutaIdParam);

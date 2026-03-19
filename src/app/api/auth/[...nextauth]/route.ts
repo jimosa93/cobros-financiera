@@ -37,7 +37,7 @@ export const authOptions: NextAuthOptions = {
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.sub || '';
-                session.user.rol = token.rol as 'ADMIN' | 'COBRADOR';
+                session.user.rol = token.rol as 'ADMIN' | 'USUARIO';
                 session.user.rutaId = token.rutaId as number | null;
             }
             return session;

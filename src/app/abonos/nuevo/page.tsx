@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Field, Input, Select } from '@/components/FormControls';
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface Cliente {
   id: number;
@@ -34,6 +35,7 @@ const TIPOS = ["EFECTIVO", "CON-SUPERVISOR", "CON-JEFE"];
 export default function NuevoAbonoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { can, loading: loadingPerms } = usePermissions();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [prestamos, setPrestamos] = useState<PrestamoSimple[]>([]);
   const [clienteId, setClienteId] = useState("");
@@ -78,6 +80,20 @@ export default function NuevoAbonoPage() {
   }
 
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) {
+      router.replace('/login');
+      return;
+    }
+    if (!can('ABONOS_CREATE')) {
+      router.replace('/');
+    }
+  }, [status, loadingPerms, session, can, router]);
+
+  useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) return;
+    if (!can('ABONOS_CREATE')) return;
     // Load only clients that have at least one ACTIVO prestamo
     (async () => {
       try {
@@ -94,16 +110,19 @@ export default function NuevoAbonoPage() {
         setClientes([]);
       }
     })();
-  }, []);
+  }, [status, loadingPerms, session, can]);
 
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) return;
+    if (!can('ABONOS_CREATE')) return;
     if (!clienteId) { setPrestamos([]); setPrestamoId(""); return; }
     fetch(`/api/prestamos?clienteId=${clienteId}&pageSize=1000`).then(r => r.json()).then(d => {
       const list: PrestamoSimple[] = d.prestamos || [];
       // Mostrar sólo préstamos activos para registrar abonos
       setPrestamos(list.filter((p) => (p.estado ?? 'ACTIVO') === 'ACTIVO'));
     });
-  }, [clienteId]);
+  }, [clienteId, status, loadingPerms, session, can]);
 
   const [prestamoDetails, setPrestamoDetails] = useState<PrestamoSimple | null>(null);
   const [sumaAbonos, setSumaAbonos] = useState<number>(0);
@@ -111,6 +130,9 @@ export default function NuevoAbonoPage() {
   const [lastAbonoSum, setLastAbonoSum] = useState<number>(0);
 
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) return;
+    if (!can('ABONOS_CREATE')) return;
     if (!prestamoId) { setPrestamoDetails(null); setSumaAbonos(0); return; }
     // fetch prestamo details
     fetch(`/api/prestamos/${prestamoId}`).then(r => r.json()).then(d => {
@@ -122,10 +144,13 @@ export default function NuevoAbonoPage() {
       const sum = d.sumMonto ? parseFloat(d.sumMonto) : 0;
       setSumaAbonos(sum);
     });
-  }, [prestamoId]);
+  }, [prestamoId, status, loadingPerms, session, can]);
 
   // fetch last abono overall (most recent)
   useEffect(() => {
+    if (status === 'loading' || loadingPerms) return;
+    if (!session) return;
+    if (!can('ABONOS_CREATE')) return;
     fetch(`/api/abonos?page=1&pageSize=1`).then(r => r.json()).then(async d => {
       const a: AbonoSimple | null = (d.abonos && d.abonos.length > 0) ? d.abonos[0] : null;
       setLastAbono(a);
@@ -142,10 +167,10 @@ export default function NuevoAbonoPage() {
         setLastAbonoSum(0);
       }
     });
-  }, []);
+  }, [status, loadingPerms, session, can]);
 
-  if (status === "loading") return <div style={{ padding: 20, textAlign: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>;
-  if (!session) { router.replace("/login"); return null; }
+  if (status === "loading" || loadingPerms) return <div style={{ padding: 20, textAlign: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '6px solid #e5e7eb', borderTop: '6px solid #0070f3', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>;
+  if (!session || !can('ABONOS_CREATE')) return null;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
