@@ -11,7 +11,7 @@ export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { can } = usePermissions();
-  const [rutaAsignada, setRutaAsignada] = useState<{ id: number; nombre: string } | null>(null);
+  const [rutasAsignadas, setRutasAsignadas] = useState<{ id: number; nombre: string }[]>([]);
   const [loadingRuta, setLoadingRuta] = useState(false);
 
   useEffect(() => {
@@ -23,48 +23,30 @@ export default function Home() {
   useEffect(() => {
     if (!session) return;
 
-    const loadRuta = async () => {
+    const loadRutas = async () => {
       const userRole = session.user.rol;
-      let rutaId: number | null = null;
-      if ((session.user as { id?: string }).id) {
-        try {
-          const uid = (session.user as { id?: string }).id;
-          const ures = await fetch(`/api/users/${uid}`);
-          if (ures.ok) {
-            const uj = await ures.json();
-            const u = uj?.user || uj;
-            if (Array.isArray(u?.rutaIds) && u.rutaIds.length > 0) {
-              rutaId = Number(u.rutaIds[0]);
-            }
-          }
-        } catch (err) {
-          console.warn('Unable to fetch fresh user data for ruta fallback', err);
-        }
-      }
-
-      if (!rutaId || userRole !== 'USUARIO') {
-        setRutaAsignada(null);
+      if (userRole !== 'USUARIO') {
+        setRutasAsignadas([]);
         return;
       }
-
       try {
         setLoadingRuta(true);
-        const res = await fetch(`/api/rutas/${rutaId}`);
+        const res = await fetch('/api/rutas');
         if (!res.ok) {
-          setRutaAsignada(null);
+          setRutasAsignadas([]);
           return;
         }
         const j = await res.json();
-        const r = j?.ruta || j;
-        if (r && typeof r === 'object') setRutaAsignada({ id: r.id, nombre: r.nombre });
+        const loaded: { id: number; nombre: string }[] = (j?.rutas || []).map((r: { id: number; nombre: string }) => ({ id: r.id, nombre: r.nombre }));
+        setRutasAsignadas(loaded);
       } catch (e) {
-        console.error('Error loading ruta asignada:', e);
-        setRutaAsignada(null);
+        console.error('Error loading rutas asignadas:', e);
+        setRutasAsignadas([]);
       } finally {
         setLoadingRuta(false);
       }
     };
-    loadRuta();
+    loadRutas();
   }, [session]);
 
   if (status === 'loading') {
@@ -207,7 +189,7 @@ export default function Home() {
               <p style={{ color: '#666', marginTop: '0.5rem' }}>
                 Ruta asignada:{' '}
                 <strong>
-                  {loadingRuta ? 'Cargando...' : (rutaAsignada ? rutaAsignada.nombre : 'No asignada')}
+                  {loadingRuta ? 'Cargando...' : (rutasAsignadas.length > 0 ? rutasAsignadas.map(r => r.nombre).join(', ') : 'No asignada')}
                 </strong>
               </p>
             </>
